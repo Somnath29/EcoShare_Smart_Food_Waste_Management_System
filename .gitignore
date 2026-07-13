@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment files
+.env
+.env.*
+**/.env
+
+# Build folders
+dist/
+dist-ssr/
+build/
+**/dist/
+**/build/
+
+# Logs
+logs
+*.log
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+.idea/
+
+# Misc
+*.local
