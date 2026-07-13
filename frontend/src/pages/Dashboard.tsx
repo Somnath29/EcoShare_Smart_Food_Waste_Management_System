@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { useToast } from '../components/ui/Toast.js';
 import { Skeleton, CardSkeleton } from '../components/ui/Skeleton.js';
@@ -7,7 +7,7 @@ import {
   User, ShieldAlert, Award, MapPin, CheckCircle, Clock, 
   FileSpreadsheet, Plus, Edit, Trash2, Search, SlidersHorizontal, 
   List, Grid, ChevronRight, ArrowLeft, LogOut, LayoutDashboard,
-  Utensils, CalendarDays, Compass, Loader2
+  Utensils, CalendarDays, Compass, Loader2, Play, Pause, RotateCcw, Zap
 } from 'lucide-react';
 import { 
   getFoodsApi, 
@@ -839,6 +839,729 @@ export const Dashboard = () => {
     );
   };
 
+  // Reusable Interactive Algorithms in Action DSA Visualizer Panel
+  const AlgorithmsInAction: React.FC<{ defaultAlgo: string }> = ({ defaultAlgo }) => {
+    const [selectedAlgo, setSelectedAlgo] = useState<string>(defaultAlgo);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const [step, setStep] = useState<number>(0);
+    const [speed, setSpeed] = useState<number>(1800); // speed in ms
+
+    const ALGO_DETAILS: {
+      [key: string]: {
+        name: string;
+        timeComp: string;
+        spaceComp: string;
+        reason: string;
+        explanation: string;
+        steps: string[];
+      };
+    } = {
+      min_heap: {
+        name: "Min Heap (Food Inventory Expiry)",
+        timeComp: "O(1) Peek, O(log N) Insert/Extract",
+        spaceComp: "O(N) Storage",
+        reason: "Priority queues are required to track surplus foods closest to their expiry time. A Min Heap provides O(1) retrieval of the most urgent item.",
+        explanation: "Each node represents a food listing. When a new item is logged, it bubbles up based on expiry time. The item at the root is always the next to expire.",
+        steps: [
+          "Initial State: Expiry heap is loaded with items. Root is 12 hours left.",
+          "Inserting new food item with urgent expiry (3 hours). Placed at the end of the array [12, 18, 24, 30, 45, 3].",
+          "Heapify Up (Bubble up): Compare 3 with parent (24). Since 3 < 24, swap them: [12, 18, 3, 30, 45, 24].",
+          "Heapify Up (Bubble up): Compare 3 with parent (12). Since 3 < 12, swap them: [3, 18, 12, 30, 45, 24]. Root is now 3 hours left.",
+          "Extract Min (Claim food): Root item (3) is claimed. Replace root with last element (24): [24, 18, 12, 30, 45].",
+          "Heapify Down (Sink down): Compare 24 with children (18 and 12). Swap with smaller child (12): [12, 18, 24, 30, 45]. Heap property restored!"
+        ]
+      },
+      hash_map: {
+        name: "Hash Map (Category Distribution)",
+        timeComp: "O(1) Average Search/Insert",
+        spaceComp: "O(N) Space",
+        reason: "Surplus categories must be aggregated instantly. Hash Maps enable constant-time lookups and category frequency counts.",
+        explanation: "Food categories are hashed using a hash function to find the bucket index. If multiple keys hash to the same bucket, we chain them using linked lists.",
+        steps: [
+          "Initial Map: Bucket slots 0-7 are initialized as empty lists.",
+          "Hashing 'Baked Goods': h('Baked Goods') = sum(chars) % 8 = index 3.",
+          "Inserting 'Baked Goods' at bucket index 3.",
+          "Hashing 'Cooked Meals': h('Cooked Meals') = index 3. Collision detected at index 3!",
+          "Resolving Collision (Chaining): Append 'Cooked Meals' to the linked list at bucket index 3."
+        ]
+      },
+      dijkstra: {
+        name: "Dijkstra (Shortest Redistribution Path)",
+        timeComp: "O((V + E) log V)",
+        spaceComp: "O(V + E)",
+        reason: "Redistributing hot surplus meals requires minimizing travel time. Dijkstra computes the absolute shortest transit path.",
+        explanation: "Nodes represent kitchens, hubs, and NGOs. We recursively select the unvisited node with the smallest tentative distance and relax all its outgoing edges.",
+        steps: [
+          "Initialize: Set distance to source Kitchen (A) = 0, and all other nodes to Infinity.",
+          "Visit Node A: Calculate tentative distances to neighbors: Hub B = 4, Hub C = 2.",
+          "Select C (Min distance unvisited): Inspect C's neighbors. Distance to Hub D becomes 2 + 3 = 5.",
+          "Select B (Min distance unvisited): Inspect B's neighbors. Distance to D remains 5 (since 4 + 2 = 6 > 5). Distance to NGO E becomes 4 + 7 = 11.",
+          "Select D (Min distance unvisited): Inspect D's neighbors. Distance to NGO E becomes 5 + 2 = 7 (shorter than 11!).",
+          "Shortest Path Found: Optimal path is Kitchen A -> Hub C -> Hub D -> NGO E (total weight = 7)."
+        ]
+      },
+      greedy: {
+        name: "Greedy Algorithm (NGO Batch Match)",
+        timeComp: "O(N log N) due to sorting",
+        spaceComp: "O(1) auxiliary",
+        reason: "NGOs claim multiple donations under vehicle capacity constraints. A Greedy choice maximizes food volume rescued per trip.",
+        explanation: "Items are sorted by their quantity-to-distance ratio. The algorithm greedily takes the best items first until the truck is full.",
+        steps: [
+          "Sort available bulk batches by Priority Ratio (Volume / Distance).",
+          "Batch 1 Ratio = 12.0 (Highest). Select this batch completely (40% truck capacity filled).",
+          "Batch 2 Ratio = 8.5. Select this batch completely (75% truck capacity filled).",
+          "Batch 3 Ratio = 5.0. Truck capacity remaining = 25%. Greedily claim a fractional amount of this batch.",
+          "Complete Match: NGO transport load is optimized to maximize community nourishment."
+        ]
+      },
+      merge_sort: {
+        name: "Merge Sort (Waste Analytics Timeline)",
+        timeComp: "O(N log N) guaranteed",
+        spaceComp: "O(N) temp storage",
+        reason: "Historical reports must be sorted chronologically. Merge Sort offers guaranteed O(N log N) sorting stability for large time-series logs.",
+        explanation: "Divide the unsorted log array into two halves, recursively sort both halves, and then merge the sorted halves back together.",
+        steps: [
+          "Divide: Split the unsorted waste log timestamps into single elements.",
+          "Merge step 1: Compare adjacent logs and merge into sorted pairs.",
+          "Merge step 2: Compare pairs and merge into sorted blocks of 4.",
+          "Final Merge: Combine the remaining sorted halves to form the chronological timeline."
+        ]
+      },
+      queue: {
+        name: "Queue (Claim Reservation FIFO)",
+        timeComp: "O(1) push and pop",
+        spaceComp: "O(N) memory",
+        reason: "Surplus meals must be distributed fairly. A Queue (First-In, First-Out) ensures reservations are processed in exact order of arrival.",
+        explanation: "Students and NGOs join the queue at the rear. The kitchen processes and dispatches reservations from the front of the queue.",
+        steps: [
+          "Queue Initial: Contains [Claim #101, Claim #102].",
+          "Enqueue: Claim #103 arrives and joins at the Rear.",
+          "Dispatch: Kitchen finishes preparing Claim #101. It is Dequeued from the Front.",
+          "Dispatch: Kitchen prepares Claim #102. It is Dequeued from the Front."
+        ]
+      },
+      binary_search: {
+        name: "Binary Search (Food Search Engine)",
+        timeComp: "O(log N)",
+        spaceComp: "O(1)",
+        reason: "Searching through catalog listings. Binary Search provides sub-linear scale lookups as the food database expands.",
+        explanation: "Look at the middle element. If target matches, return index. If target is smaller, repeat search in left half; otherwise, search right half.",
+        steps: [
+          "Sorted List: [10, 15, 20, 30, 45, 60, 75, 80, 95]. Target = 75.",
+          "Step 1: low = 0, high = 8. Mid = 4 (value = 45). Target 75 > 45, search right half.",
+          "Step 2: low = 5, high = 8. Mid = 6 (value = 75). Target 75 === 75. Index Found!"
+        ]
+      },
+      quick_sort: {
+        name: "Quick Sort (Donations Urgency Sort)",
+        timeComp: "O(N log N) Average",
+        spaceComp: "O(log N) recursion depth",
+        reason: "Donations are sorted dynamically by urgency levels. Quick Sort is in-place and performs extremely fast for catalog sorting.",
+        explanation: "Pick a pivot element. Partition array such that elements smaller than pivot go left, and larger elements go right. Recursively sort partitions.",
+        steps: [
+          "Select Pivot: Element 45 is chosen as pivot.",
+          "Partitioning: Move items smaller than 45 left, larger items right.",
+          "Recursive Sort: Sort the left subarray [12, 30] and right subarray [60, 80] around their pivots.",
+          "Completed: Entire donations array is sorted by urgency weight."
+        ]
+      }
+    };
+
+    const details = ALGO_DETAILS[selectedAlgo];
+
+    useEffect(() => {
+      let interval: any = null;
+      if (isPlaying) {
+        interval = setInterval(() => {
+          setStep((prev) => {
+            if (prev >= details.steps.length - 1) {
+              return 0; // loop back
+            }
+            return prev + 1;
+          });
+        }, speed);
+      }
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [isPlaying, selectedAlgo, speed, details.steps.length]);
+
+    const handlePlayPause = () => setIsPlaying(!isPlaying);
+    const handleReplay = () => {
+      setStep(0);
+      setIsPlaying(true);
+    };
+
+    // Render the specific visual structure based on algorithm and active step
+    const renderVisualRepresentation = () => {
+      switch (selectedAlgo) {
+        case "min_heap": {
+          let heapArr: number[] = [12, 18, 24, 30, 45];
+          let highlights: number[] = [];
+          if (step === 1) {
+            heapArr = [12, 18, 24, 30, 45, 3];
+            highlights = [5];
+          } else if (step === 2) {
+            heapArr = [12, 18, 3, 30, 45, 24];
+            highlights = [2, 5];
+          } else if (step === 3) {
+            heapArr = [3, 18, 12, 30, 45, 24];
+            highlights = [0, 2];
+          } else if (step === 4) {
+            heapArr = [24, 18, 12, 30, 45];
+            highlights = [0];
+          } else if (step === 5) {
+            heapArr = [12, 18, 24, 30, 45];
+            highlights = [0, 2];
+          }
+
+          return (
+            <div className="flex flex-col items-center justify-center h-48 space-y-6">
+              {/* Render as a tree layer structure */}
+              <div className="flex flex-col items-center gap-4 relative">
+                {/* Level 0 */}
+                <div className="flex justify-center">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
+                    highlights.includes(0) ? 'border-amber-400 bg-amber-400/20 text-amber-500 animate-pulse' : 'border-emerald-500 bg-emerald-500/10 text-emerald-500'
+                  }`}>
+                    {heapArr[0] || '?'}
+                  </div>
+                </div>
+                {/* Level 1 */}
+                <div className="flex gap-16">
+                  {heapArr.length > 1 && (
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold border transition-all ${
+                      highlights.includes(1) ? 'border-amber-400 bg-amber-400/20 text-amber-500 animate-pulse' : 'border-zinc-400 bg-zinc-100 dark:bg-zinc-800 text-zinc-655'
+                    }`}>
+                      {heapArr[1]}
+                    </div>
+                  )}
+                  {heapArr.length > 2 && (
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold border transition-all ${
+                      highlights.includes(2) ? 'border-amber-400 bg-amber-400/20 text-amber-500 animate-pulse' : 'border-zinc-400 bg-zinc-100 dark:bg-zinc-800 text-zinc-655'
+                    }`}>
+                      {heapArr[2]}
+                    </div>
+                  )}
+                </div>
+                {/* Level 2 */}
+                <div className="flex gap-4">
+                  {heapArr.slice(3, 7).map((val, idx) => (
+                    <div key={idx} className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
+                      highlights.includes(3 + idx) ? 'border-amber-400 bg-amber-400/20 text-amber-500 animate-pulse' : 'border-zinc-300 bg-zinc-50 dark:bg-zinc-900 text-zinc-500'
+                    }`}>
+                      {val}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {heapArr.map((val, idx) => (
+                  <span key={idx} className={`px-2 py-1 text-xs font-mono border rounded ${highlights.includes(idx) ? 'border-amber-400 bg-amber-400/10 text-amber-500' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-400'}`}>
+                    {val}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        case "hash_map": {
+          const buckets: any[] = Array.from({ length: 8 }, () => []);
+          let activeIndex = -1;
+          if (step >= 1) {
+            buckets[3].push("Baked Goods");
+            activeIndex = 3;
+          }
+          if (step >= 3) {
+            buckets[5].push("Groceries");
+            activeIndex = 5;
+          }
+          if (step >= 4) {
+            buckets[3].push("Cooked Meals");
+            activeIndex = 3;
+          }
+
+          return (
+            <div className="grid grid-cols-1 gap-2 h-48 overflow-y-auto pr-2">
+              {buckets.map((list, idx) => (
+                <div key={idx} className={`flex items-center gap-3 p-1.5 rounded-xl border transition-all ${
+                  activeIndex === idx ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-150 dark:border-zinc-800/40'
+                }`}>
+                  <span className="text-[10px] font-bold text-zinc-400 font-mono w-14">Bucket {idx}:</span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto">
+                    {list.length === 0 ? (
+                      <span className="text-[9px] text-zinc-400 italic font-mono">null</span>
+                    ) : (
+                      list.map((item: string, i: number) => (
+                        <React.Fragment key={i}>
+                          {i > 0 && <span className="text-zinc-400 text-xs font-bold font-mono">→</span>}
+                          <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded-lg whitespace-nowrap">
+                            {item}
+                          </span>
+                        </React.Fragment>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        }
+        case "dijkstra": {
+          // Graph coordinates: Kitchen A (left), Hub B (top), Hub C (bottom), Hub D (mid-right), NGO E (right)
+          // Steps correspond to path expansions
+          let nodeStates: any = { A: "unvisited", B: "unvisited", C: "unvisited", D: "unvisited", E: "unvisited" };
+          let distances: any = { A: "0", B: "∞", C: "∞", D: "∞", E: "∞" };
+          let shortestPath: string[] = [];
+
+          if (step === 0) {
+            nodeStates.A = "active";
+          } else if (step === 1) {
+            nodeStates.A = "visited";
+            nodeStates.B = "active";
+            nodeStates.C = "active";
+            distances.B = "4";
+            distances.C = "2";
+          } else if (step === 2) {
+            nodeStates.A = "visited";
+            nodeStates.C = "visited";
+            nodeStates.D = "active";
+            distances.B = "4";
+            distances.C = "2";
+            distances.D = "5";
+          } else if (step === 3) {
+            nodeStates.A = "visited";
+            nodeStates.C = "visited";
+            nodeStates.B = "visited";
+            nodeStates.D = "visited";
+            nodeStates.E = "active";
+            distances.B = "4";
+            distances.C = "2";
+            distances.D = "5";
+            distances.E = "11";
+          } else if (step === 4) {
+            nodeStates.A = "visited";
+            nodeStates.C = "visited";
+            nodeStates.B = "visited";
+            nodeStates.D = "visited";
+            nodeStates.E = "visited";
+            distances.B = "4";
+            distances.C = "2";
+            distances.D = "5";
+            distances.E = "7";
+            shortestPath = ["A", "C", "D", "E"];
+          } else if (step === 5) {
+            nodeStates.A = "visited";
+            nodeStates.C = "visited";
+            nodeStates.B = "visited";
+            nodeStates.D = "visited";
+            nodeStates.E = "visited";
+            distances.B = "4";
+            distances.C = "2";
+            distances.D = "5";
+            distances.E = "7";
+            shortestPath = ["A", "C", "D", "E"];
+          }
+
+          const nodeCoords: any = {
+            A: { x: "10%", y: "45%" },
+            B: { x: "40%", y: "15%" },
+            C: { x: "40%", y: "75%" },
+            D: { x: "70%", y: "45%" },
+            E: { x: "90%", y: "45%" }
+          };
+
+          return (
+            <div className="h-48 relative border border-zinc-150 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 rounded-2xl overflow-hidden shadow-inner">
+              {/* Lines mapping */}
+              <svg className="absolute inset-0 h-full w-full pointer-events-none" style={{ zIndex: 1 }}>
+                {/* Edge paths */}
+                <line x1="10%" y1="45%" x2="40%" y2="15%" stroke={shortestPath.includes("A") && shortestPath.includes("B") ? "#f59e0b" : "#d4d4d8"} strokeWidth={shortestPath.includes("A") && shortestPath.includes("B") ? "3" : "1.5"} opacity="0.6" />
+                <line x1="10%" y1="45%" x2="40%" y2="75%" stroke={shortestPath.includes("A") && shortestPath.includes("C") ? "#f59e0b" : "#d4d4d8"} strokeWidth={shortestPath.includes("A") && shortestPath.includes("C") ? "3" : "1.5"} opacity="0.6" />
+                <line x1="40%" y1="15%" x2="70%" y2="45%" stroke={shortestPath.includes("B") && shortestPath.includes("D") ? "#f59e0b" : "#d4d4d8"} strokeWidth={shortestPath.includes("B") && shortestPath.includes("D") ? "3" : "1.5"} opacity="0.6" />
+                <line x1="40%" y1="75%" x2="70%" y2="45%" stroke={shortestPath.includes("C") && shortestPath.includes("D") ? "#f59e0b" : "#d4d4d8"} strokeWidth={shortestPath.includes("C") && shortestPath.includes("D") ? "3" : "1.5"} opacity="0.6" />
+                <line x1="70%" y1="45%" x2="90%" y2="45%" stroke={shortestPath.includes("D") && shortestPath.includes("E") ? "#f59e0b" : "#d4d4d8"} strokeWidth={shortestPath.includes("D") && shortestPath.includes("E") ? "3" : "1.5"} opacity="0.6" />
+              </svg>
+
+              {Object.keys(nodeCoords).map((n) => {
+                const state = nodeStates[n];
+                const activeBorder = state === "active" ? "border-amber-400 bg-amber-400/20 text-amber-500 scale-110 shadow-lg shadow-amber-500/10" : state === "visited" ? "border-emerald-500 bg-emerald-500/10 text-emerald-500" : "border-zinc-350 bg-white dark:bg-zinc-900 text-zinc-500";
+                return (
+                  <div
+                    key={n}
+                    className={`absolute h-8 w-8 rounded-full border-2 flex flex-col items-center justify-center text-xs font-bold transition-all duration-300 ${activeBorder}`}
+                    style={{ left: nodeCoords[n].x, top: nodeCoords[n].y, transform: "translate(-50%, -50%)", zIndex: 10 }}
+                  >
+                    <span>{n}</span>
+                    <span className="absolute bottom-[-16px] text-[8px] font-extrabold text-zinc-400 dark:text-zinc-500">{distances[n]}</span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+        case "greedy": {
+          let truckLoad = 0;
+          let activeIndex = -1;
+          if (step === 2) {
+            truckLoad = 40;
+            activeIndex = 0;
+          } else if (step === 3) {
+            truckLoad = 75;
+            activeIndex = 1;
+          } else if (step === 4) {
+            truckLoad = 100;
+            activeIndex = 2;
+          }
+
+          const items = [
+            { name: "Batch A (Ratio 12.0)", weight: "40kg" },
+            { name: "Batch B (Ratio 8.5)", weight: "35kg" },
+            { name: "Batch C (Ratio 5.0)", weight: "25kg" }
+          ];
+
+          return (
+            <div className="flex flex-col justify-center h-48 space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold text-zinc-500">
+                  <span>NGO Truck load capacity</span>
+                  <span className="text-emerald-500">{truckLoad}% capacity filled</span>
+                </div>
+                <div className="w-full h-5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden p-0.5 border border-zinc-300 dark:border-zinc-700">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500 flex items-center justify-end pr-2 text-[9px] font-bold text-white"
+                    style={{ width: `${truckLoad}%` }}
+                  >
+                    {truckLoad > 0 && `${truckLoad}%`}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {items.map((item, idx) => (
+                  <div key={idx} className={`p-2 rounded-xl border flex justify-between items-center text-xs transition-all ${
+                    idx === activeIndex ? 'border-amber-400 bg-amber-400/10 text-amber-600 dark:text-amber-400 animate-pulse' : idx < activeIndex ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-600' : 'border-zinc-150 dark:border-zinc-800/40 text-zinc-400'
+                  }`}>
+                    <span className="font-semibold">{item.name}</span>
+                    <span className="font-mono text-[10px]">{item.weight}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        case "merge_sort": {
+          let rows: any[] = [];
+          if (step === 0) {
+            rows = [
+              [78, 23, 45, 12, 56, 89, 34, 90]
+            ];
+          } else if (step === 1) {
+            rows = [
+              [78, 23], [45, 12], [56, 89], [34, 90]
+            ];
+          } else if (step === 2) {
+            rows = [
+              [23, 78], [12, 45], [56, 89], [34, 90]
+            ];
+          } else if (step === 3) {
+            rows = [
+              [12, 23, 45, 78], [34, 56, 89, 90]
+            ];
+          } else if (step === 4) {
+            rows = [
+              [12, 23, 34, 45, 56, 78, 89, 90]
+            ];
+          }
+
+          return (
+            <div className="flex flex-col justify-center items-center h-48 space-y-4">
+              {rows.map((row, idx) => (
+                <div key={idx} className="flex gap-4">
+                  {Array.isArray(row[0]) ? (
+                    row.map((sub: any, i: number) => (
+                      <div key={i} className="flex gap-1 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl bg-zinc-50 dark:bg-zinc-950">
+                        {sub.map((v: number) => (
+                          <span key={v} className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-mono font-bold bg-white dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-800 shadow-sm text-zinc-700 dark:text-zinc-300">
+                            {v}
+                          </span>
+                        ))}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex gap-1 border border-zinc-200 dark:border-zinc-800 p-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 shadow-sm">
+                      {row.map((v: number) => (
+                        <span key={v} className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-mono font-bold bg-white dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300">
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        }
+        case "queue": {
+          let list = ["Claim #101", "Claim #102"];
+          let highlightIdx = -1;
+          if (step === 1) {
+            list = ["Claim #101", "Claim #102", "Claim #103"];
+            highlightIdx = 2; // enqueue rear
+          } else if (step === 2) {
+            list = ["Claim #102", "Claim #103"];
+            highlightIdx = 0; // dequeue front
+          } else if (step === 3) {
+            list = ["Claim #103"];
+            highlightIdx = 0;
+          }
+
+          return (
+            <div className="flex flex-col justify-center items-center h-48 space-y-6">
+              <div className="flex items-center gap-1.5 border-y-2 border-zinc-350 bg-zinc-50 dark:bg-zinc-950/20 py-4 px-8 w-full max-w-md justify-center relative overflow-hidden rounded-xl">
+                <span className="absolute left-2 text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest">Front</span>
+                <span className="absolute right-2 text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest">Rear</span>
+                <AnimatePresence mode="popLayout">
+                  {list.map((item, idx) => (
+                    <motion.div
+                      key={item}
+                      initial={{ opacity: 0, x: 50, scale: 0.8 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: -50, scale: 0.8 }}
+                      className={`px-3 py-1.5 border text-xs font-bold rounded-xl transition-all shadow-sm ${
+                        idx === highlightIdx ? 'border-amber-400 bg-amber-400/10 text-amber-500' : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                      }`}
+                    >
+                      {item}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          );
+        }
+        case "binary_search": {
+          const arr = [10, 15, 20, 30, 45, 60, 75, 80, 95];
+          let low = 0, high = 8, mid = -1;
+          if (step === 1) {
+            low = 5; high = 8; mid = 4;
+          } else if (step === 2) {
+            low = 5; high = 8; mid = 6;
+          }
+
+          return (
+            <div className="flex flex-col justify-center items-center h-48 space-y-6">
+              <div className="flex gap-2">
+                {arr.map((val, idx) => {
+                  const isMid = idx === mid;
+                  const isMatch = step === 2 && idx === 6;
+                  const inBounds = idx >= low && idx <= high;
+                  return (
+                    <div
+                      key={idx}
+                      className={`h-10 w-10 border rounded-xl flex flex-col items-center justify-center text-xs font-mono font-bold transition-all relative ${
+                        isMatch ? 'border-emerald-500 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : isMid ? 'border-amber-400 bg-amber-400/20 text-amber-600 dark:text-amber-400 scale-105' : inBounds ? 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300' : 'border-zinc-150 bg-zinc-50 dark:border-zinc-900/40 text-zinc-400 opacity-30'
+                      }`}
+                    >
+                      <span>{val}</span>
+                      <span className="absolute bottom-[-16px] text-[8px] text-zinc-450 dark:text-zinc-500">{idx}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-6 text-[10px] font-bold text-zinc-400">
+                <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-400"></span> Low: Index {low}</span>
+                {mid !== -1 && <span className="inline-flex items-center gap-1 text-amber-500"><span className="h-2 w-2 rounded-full bg-amber-500"></span> Mid: Index {mid}</span>}
+                <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-400"></span> High: Index {high}</span>
+              </div>
+            </div>
+          );
+        }
+        case "quick_sort": {
+          let list = [45, 12, 80, 30, 60];
+          let pivot = 45;
+          let leftIdx = -1;
+          let rightIdx = -1;
+
+          if (step === 1) {
+            leftIdx = 1; rightIdx = 3;
+          } else if (step === 2) {
+            list = [30, 12, 45, 80, 60];
+          } else if (step === 3) {
+            list = [12, 30, 45, 60, 80];
+          }
+
+          return (
+            <div className="flex flex-col justify-center items-center h-48 space-y-6">
+              <div className="flex items-end gap-3 h-24 pb-2">
+                {list.map((val, idx) => {
+                  const isPivot = val === pivot;
+                  const isLeft = idx === leftIdx;
+                  const isRight = idx === rightIdx;
+                  const height = `${(val / 95) * 100}%`;
+                  return (
+                    <div key={val} className="flex flex-col items-center gap-1.5 w-10">
+                      <div
+                        className={`w-full rounded-t-lg transition-all duration-300 ${
+                          isPivot ? 'bg-indigo-500 shadow-md shadow-indigo-500/20' : isLeft || isRight ? 'bg-amber-400 shadow-md shadow-amber-500/20' : 'bg-emerald-500'
+                        }`}
+                        style={{ height }}
+                      />
+                      <span className="text-[10px] font-bold font-mono text-zinc-500">{val}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-4 text-[9px] font-bold text-zinc-400">
+                <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-lg bg-indigo-500"></span> Pivot ({pivot})</span>
+                <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-lg bg-emerald-500"></span> Partition Array</span>
+              </div>
+            </div>
+          );
+        }
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-sm overflow-hidden mt-8 animate-fade-in">
+        <div className="border-b border-zinc-100 dark:border-zinc-800 pb-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+              <Zap className="h-4.5 w-4.5 text-emerald-500" />
+              Algorithms in Action
+              <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                DSA VISUALIZER
+              </span>
+            </h3>
+            <p className="text-xs text-zinc-450 dark:text-zinc-500">
+              Interactive structural demonstrations of the DSA engines powering EcoShare's routing and redistribution.
+            </p>
+          </div>
+
+          {/* Quick Select Buttons */}
+          <div className="flex flex-wrap gap-1">
+            {Object.keys(ALGO_DETAILS).map((key) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setSelectedAlgo(key);
+                  setStep(0);
+                  setIsPlaying(false);
+                }}
+                className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                  selectedAlgo === key
+                    ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                    : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }`}
+              >
+                {key.replace('_', ' ').toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Visualizer Body */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          {/* Simulation Display Panel */}
+          <div className="lg:col-span-7 flex flex-col justify-between border border-zinc-150 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-2xl p-6 min-h-[300px]">
+            {/* Visual graph/array representation */}
+            <div className="flex-1 flex items-center justify-center w-full">
+              <div className="w-full">
+                {renderVisualRepresentation()}
+              </div>
+            </div>
+
+            {/* Animation controls block */}
+            <div className="border-t border-zinc-200/80 dark:border-zinc-800/60 pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePlayPause}
+                  className="p-2 bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-950 rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  title={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </button>
+                <button
+                  onClick={handleReplay}
+                  className="p-2 border border-zinc-250 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all cursor-pointer"
+                  title="Replay from start"
+                >
+                  <RotateCcw className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                </button>
+                <button
+                  onClick={() => {
+                    setStep((prev) => (prev >= details.steps.length - 1 ? 0 : prev + 1));
+                    setIsPlaying(false);
+                  }}
+                  className="px-3 py-1.5 border border-zinc-250 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold rounded-xl flex items-center gap-1 cursor-pointer"
+                  title="Step Forward"
+                >
+                  <span>Step</span>
+                  <ChevronRight className="h-3 w-3" />
+                </button>
+              </div>
+
+              {/* Speed Controller slider */}
+              <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
+                <span>Speed:</span>
+                <input
+                  type="range"
+                  min="600"
+                  max="3500"
+                  step="200"
+                  value={speed}
+                  onChange={(e) => setSpeed(Number(e.target.value))}
+                  className="w-24 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                />
+                <span className="font-mono text-[10px] w-12 text-right">{(speed / 1000).toFixed(1)}s</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Educational descriptions panel */}
+          <div className="lg:col-span-5 flex flex-col justify-between bg-zinc-50/20 dark:bg-zinc-950/20 border border-zinc-150 dark:border-zinc-800/80 rounded-2xl p-6 space-y-6">
+            <div className="space-y-4">
+              <div>
+                <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest">Active DSA Model</span>
+                <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">{details.name}</h4>
+              </div>
+
+              {/* Complexities Badges */}
+              <div className="flex gap-2">
+                <span className="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 rounded-xl text-[10px] font-bold font-mono">
+                  Time: {details.timeComp}
+                </span>
+                <span className="px-2.5 py-1 bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20 rounded-xl text-[10px] font-bold font-mono">
+                  Space: {details.spaceComp}
+                </span>
+              </div>
+
+              <div className="space-y-3 pt-3 border-t border-zinc-150 dark:border-zinc-800/80">
+                <div className="space-y-1">
+                  <h5 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Select Justification</h5>
+                  <p className="text-xs text-zinc-650 dark:text-zinc-350 leading-relaxed font-medium">{details.reason}</p>
+                </div>
+                <div className="space-y-1 pt-2">
+                  <h5 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Redistribution Engine Impact</h5>
+                  <p className="text-xs text-zinc-550 dark:text-zinc-400 leading-relaxed">{details.explanation}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Current Step Description Box */}
+            <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl space-y-1 shadow-inner">
+              <span className="text-[9px] font-extrabold text-emerald-500 uppercase tracking-widest">Simulation Step {step + 1} of {details.steps.length}</span>
+              <p className="text-xs text-zinc-700 dark:text-zinc-350 font-semibold leading-relaxed">
+                {details.steps[step]}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (user?.role === 'Student') {
     const studentFilteredFoods = getFilteredAvailableFoods();
     const activeClaims = reservedFoods.filter(f => f.status === 'Reserved');
@@ -1069,6 +1792,7 @@ export const Dashboard = () => {
                     })}
                   </div>
                 )}
+                <AlgorithmsInAction defaultAlgo="binary_search" />
               </motion.div>
             )}
 
@@ -1643,6 +2367,7 @@ export const Dashboard = () => {
                     })}
                   </div>
                 )}
+                <AlgorithmsInAction defaultAlgo="dijkstra" />
               </motion.div>
             )}
 
@@ -2237,6 +2962,7 @@ export const Dashboard = () => {
                     </div>
                   </div>
                 )}
+                <AlgorithmsInAction defaultAlgo="merge_sort" />
               </motion.div>
             )}
 
@@ -2732,6 +3458,7 @@ export const Dashboard = () => {
                     ]} />
                   </div>
                 </div>
+                <AlgorithmsInAction defaultAlgo="min_heap" />
               </motion.div>
             )}
 
