@@ -9,7 +9,7 @@ import {
   User, ShieldAlert, Award, MapPin, CheckCircle, Clock, 
   FileSpreadsheet, Plus, Edit, Trash2, Search, SlidersHorizontal, 
   List, Grid, ChevronRight, ArrowLeft, LogOut, LayoutDashboard,
-  Utensils, CalendarDays, Compass, Loader2, Play, Pause, RotateCcw, Zap,
+  Utensils, CalendarDays, Compass, Loader2, Play, Pause, RotateCcw, Zap, BookOpen,
   Activity, Wifi, Cpu, Server
 } from 'lucide-react';
 import { 
@@ -25,7 +25,7 @@ import {
   deleteUserApi
 } from '../services/api.js';
 
-type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center' | 'transit_map';
+type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center' | 'transit_map' | 'dsa_learning';
 
 // Reusable progress ring
 const ProgressRing: React.FC<{ percentage: number; label: string; colorClass?: string }> = ({ 
@@ -2017,6 +2017,376 @@ export const Dashboard = () => {
     );
   };
 
+  // DSA Learning Center Component
+  const DsaLearningCenter: React.FC = () => {
+    const [selectedAlgo, setSelectedAlgo] = useState<string>('hash_map');
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const [animStep, setAnimStep] = useState<number>(0);
+    const [animSpeed, setAnimSpeed] = useState<number>(1000);
+    
+    // Learning progress state
+    const [progress, setProgress] = useState<Record<string, 'Not Started' | 'In Progress' | 'Mastered'>>({
+      hash_map: 'Mastered',
+      queue: 'In Progress',
+      priority_queue: 'Not Started',
+      heap: 'Not Started',
+      graph: 'In Progress',
+      dijkstra: 'Not Started',
+      greedy: 'Not Started',
+      merge_sort: 'Not Started',
+      binary_search: 'Mastered',
+      quick_sort: 'Not Started',
+    });
+
+    const algos = [
+      { id: 'hash_map', name: 'Hash Map', icon: '🔑', desc: 'Direct lookup map for kitchen workloads' },
+      { id: 'queue', name: 'Queue', icon: '⏳', desc: 'FIFO queue for reservation booking orders' },
+      { id: 'priority_queue', name: 'Priority Queue', icon: '⚡', desc: 'NGO dispatches sorted by food urgency' },
+      { id: 'heap', name: 'Min-Heap', icon: '🌲', desc: 'Logarithmic priority tree for active listing sorting' },
+      { id: 'graph', name: 'Graph Network', icon: '🕸️', desc: 'Relational model mapping campus map nodes' },
+      { id: 'dijkstra', name: 'Dijkstra Routing', icon: '🧭', desc: 'Shortest path travel solver for food redistribution' },
+      { id: 'greedy', name: 'Greedy Choice', icon: '🎯', desc: 'NGO fractional matches maximizing value-to-weight' },
+      { id: 'merge_sort', name: 'Merge Sort', icon: '🥞', desc: 'Divide-and-conquer chronological timeline sort' },
+      { id: 'binary_search', name: 'Binary Search', icon: '🔍', desc: 'Logarithmic search locating available dishes' },
+      { id: 'quick_sort', name: 'Quick Sort', icon: '⚡', desc: 'Pivot-based array sorter organizing weight lists' }
+    ];
+
+    const algoDetails: Record<string, {
+      purpose: string;
+      whyUsed: string;
+      timeComplexity: string;
+      spaceComplexity: string;
+      advantages: string[];
+      disadvantages: string[];
+      realLife: string;
+      visualSteps: string[];
+    }> = {
+      hash_map: {
+        purpose: 'Stores kitchen statistics mapped directly to food categories.',
+        whyUsed: 'Provides constant-time O(1) reads/writes to look up active kitchen meal volumes.',
+        timeComplexity: 'O(1) average, O(n) worst case',
+        spaceComplexity: 'O(n) linear storage',
+        advantages: ['Ultra-fast direct key lookup', 'Dynamically resizes buckets', 'Ideal for caching systems'],
+        disadvantages: ['Collision handling overhead', 'Unordered keys storage', 'High memory usage density'],
+        realLife: 'Database indices, DNS resolution routing tables, and server cache lookups.',
+        visualSteps: ['Hashed "Veg Wrap" -> index 3', 'Hashed "Pasta" -> index 1', 'Hashed "Muffin" -> index 3 (Collision resolved via chaining!)']
+      },
+      queue: {
+        purpose: 'Processes food claims and reservation requests in the exact order they arrive.',
+        whyUsed: 'Guarantees fair FIFO (First-In, First-Out) scheduling of campus food bookings.',
+        timeComplexity: 'O(1) insertion/deletion',
+        spaceComplexity: 'O(n) linear storage',
+        advantages: ['Guaranteed chronological ordering', 'Zero starvation risks', 'Simple enqueue/dequeue logic'],
+        disadvantages: ['No random access allowed', 'Searching requires O(n) traversal', 'Fixed capacity overhead in arrays'],
+        realLife: 'Print queue schedulers, request buffer logs, and customer checkout queues.',
+        visualSteps: ['Claim A enqueued (Front)', 'Claim B enqueued', 'Claim C enqueued', 'Dequeue: Claim A removed first (FIFO)']
+      },
+      priority_queue: {
+        purpose: 'Matches volunteers to active NGO dispatches prioritizing food perishability.',
+        whyUsed: 'Ensures hot/highly perishable meals are picked up and delivered before shelf-life expires.',
+        timeComplexity: 'O(log n) enqueue, O(1) peek',
+        spaceComplexity: 'O(n) linear storage',
+        advantages: ['Perishables processed first', 'Dynamically adjusting dispatches', 'Perfect for real-time triage'],
+        disadvantages: ['Starvation risk for low priority items', 'Heap index pointer adjustments', 'O(n) build overhead'],
+        realLife: 'Hospital emergency room scheduling, routers routing voice traffic, and OS task management.',
+        visualSteps: ['Rider assigned route (Perishable index 10)', 'New route logged (Perishable index 30)', 'Sort priority: Index 30 moved to front of queue']
+      },
+      heap: {
+        purpose: 'Maintains active campus food listing arrays sorted by weight.',
+        whyUsed: 'Provides direct access to the minimum-weight donation to fit volunteer vehicle volumes.',
+        timeComplexity: 'O(log n) insertion/deletion, O(n) heapify',
+        spaceComplexity: 'O(n) memory footprint',
+        advantages: ['Constant time minimum lookup', 'Highly space efficient in arrays', 'Excellent sorting stability'],
+        disadvantages: ['No support for fast searches', 'Complex pointer/index bubbling', 'Heap index calculations'],
+        realLife: 'Memory allocation systems, priority queue builders, and heapsort algorithms.',
+        visualSteps: ['Insert node 40 at end', 'Parent 15 < 40 (Heap condition satisfied)', 'Insert node 5', 'Bubble up: Parent 15 > 5 -> swap!', 'Min is now 5']
+      },
+      graph: {
+        purpose: 'Models campus intersections, restaurants, and NGO food banks.',
+        whyUsed: 'Provides the node-and-edge relational framework required for Dijkstra navigation.',
+        timeComplexity: 'O(V + E) traversal (BFS/DFS)',
+        spaceComplexity: 'O(V + E) using adjacency list',
+        advantages: ['Flexible vertex relations mapping', 'Easily models spatial maps', 'Direct pathfinding target support'],
+        disadvantages: ['Adjacency matrix consumes O(V^2) space', 'Traversal loops risk cycles', 'Complex pointer graphs'],
+        realLife: 'Social network friend maps, internet page links, and city transit networks.',
+        visualSteps: ['College node connected to Gordon', 'Gordon node connected to NGO', 'Redistribution pathways calculated as edges']
+      },
+      dijkstra: {
+        purpose: 'Calculates the shortest street route between food donor and NGO.',
+        whyUsed: 'Minimizes transit distance, maximizing speed and reducing greenhouse gas transit footprint.',
+        timeComplexity: 'O((V + E) log V) with Min-Heap',
+        spaceComplexity: 'O(V) storage',
+        advantages: ['Guarantees mathematical shortest path', 'Works on any non-negative graph', 'Dynamic route adjustments'],
+        disadvantages: ['Cannot handle negative edge weights', 'High memory usage for large graphs', 'Iterative relaxation loops'],
+        realLife: 'Google Maps directions routing, network packet routing, and robot maze pathfinding.',
+        visualSteps: ['Init: dist[Gordon] = 0, dist[others] = inf', 'Relax: dist[Colleges] updated 0 + 2 = 2', 'Relax: dist[NGO] updated 2 + 3 = 5', 'Path traced']
+      },
+      greedy: {
+        purpose: 'Selects fractions of donations to fit matching NGO requirements.',
+        whyUsed: 'Maximizes total meals rescued inside matching donation batch transactions.',
+        timeComplexity: 'O(n log n) sorting + O(n) selection',
+        spaceComplexity: 'O(1) storage',
+        advantages: ['Extremely simple implementation', 'Super fast execution speed', 'Approaches optimal solutions quickly'],
+        disadvantages: ['May get stuck in local optima', 'Does not guarantee absolute global minimum', 'Requires sorting preprocessing'],
+        realLife: 'Coin change matching, Huffman coding encoders, and knapsack packaging.',
+        visualSteps: ['Sort items by density', 'Take 10kg of Item A (value density 5)', 'Take 5kg fraction of Item B (value density 3)', 'Capacity met!']
+      },
+      merge_sort: {
+        purpose: 'Organizes system activity logs and donations chronologically.',
+        whyUsed: 'Provides stable sorting to prevent reordering matching-time donation entries.',
+        timeComplexity: 'O(n log n) in all cases',
+        spaceComplexity: 'O(n) helper storage',
+        advantages: ['Guaranteed worst-case O(n log n)', 'Extremely stable sort', 'Excellent for linked lists/large files'],
+        disadvantages: ['Requires O(n) extra helper memory', 'Recursion stack overhead', 'Slower than quicksort on cache hits'],
+        realLife: 'Sorting large files, relational database order-by clauses, and external sorting structures.',
+        visualSteps: ['Split array [30, 10, 20, 50]', 'Sublists: [30, 10] and [20, 50]', 'Divide: [30], [10] | [20], [50]', 'Merge sorted: [10, 30] and [20, 50] -> [10, 20, 30, 50]']
+      },
+      binary_search: {
+        purpose: 'Locates a specific food category or dining hall within active tables.',
+        whyUsed: 'Allows students to find available meals instantly in sorted categories.',
+        timeComplexity: 'O(log n) search time',
+        spaceComplexity: 'O(1) storage space',
+        advantages: ['Incredibly fast search speed', 'Logarithmic steps bounds search', 'Zero memory overhead'],
+        disadvantages: ['Array MUST be sorted first', 'Only works on random access structures', 'Index lookup computations'],
+        realLife: 'Database key searches, dictionary word lookups, and compiler symbol tables.',
+        visualSteps: ['Search: 40 in [10, 20, 30, 40, 50]', 'Mid point is 30 (inf to 40) -> Search Right', 'Mid of [40, 50] is 45 -> Search Left', 'Match: 40 found!']
+      },
+      quick_sort: {
+        purpose: 'Sorts donor kitchens by the total weight of food diverted.',
+        whyUsed: 'Provides the fastest average-case array sorting to refresh active leaderboard tables.',
+        timeComplexity: 'O(n log n) average, O(n^2) worst case',
+        spaceComplexity: 'O(log n) recursion stack',
+        advantages: ['Extremely fast in-place sorting', 'Cache-friendly pointer sweeps', 'No auxiliary helper array needed'],
+        disadvantages: ['Unstable sort index shifting', 'Worst-case O(n^2) if pivot choices fail', 'High recursion depth'],
+        realLife: 'Standard library sort implementations, memory cache sorting, and numeric sorting processors.',
+        visualSteps: ['Array: [30, 50, 10, 20] | Pivot: 20', 'Partition smaller: [10] | Partition larger: [30, 50]', 'Concat recursively: [10] + [20] + [30, 50] -> [10, 20, 30, 50]']
+      }
+    };
+
+    // Auto-ticking simulation index
+    useEffect(() => {
+      if (!isPlaying) return;
+      const interval = setInterval(() => {
+        setAnimStep((prev) => (prev >= 3 ? 0 : prev + 1));
+      }, animSpeed);
+      return () => clearInterval(interval);
+    }, [isPlaying, animSpeed]);
+
+    const activeDetails = algoDetails[selectedAlgo] || algoDetails.hash_map;
+
+    // Calculate Mastered ratio
+    const masteredCount = Object.values(progress).filter((v) => v === 'Mastered').length;
+    const progressPercent = Math.round((masteredCount / algos.length) * 100);
+
+    const toggleProgress = (id: string) => {
+      setProgress((prev) => {
+        const current = prev[id];
+        const next = current === 'Not Started' ? 'In Progress' : current === 'In Progress' ? 'Mastered' : 'Not Started';
+        return { ...prev, [id]: next };
+      });
+    };
+
+    return (
+      <div className="space-y-8 animate-fade-in">
+        {/* Learning Stats Bar */}
+        <div className="p-6 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-500/15 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+              <BookOpen className="h-6 w-6 text-indigo-500" /> DSA Learning Center
+            </h2>
+            <p className="text-xs text-zinc-550 dark:text-zinc-400">
+              Interactive sandbox detailing the 10 data structures and algorithms powering EcoShare's logistics engine.
+            </p>
+          </div>
+          
+          <div className="w-full md:w-80 space-y-2">
+            <div className="flex justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              <span>Overall Progress</span>
+              <span>{masteredCount} of {algos.length} Mastered ({progressPercent}%)</span>
+            </div>
+            <div className="h-2 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left panel: Selector List */}
+          <div className="lg:col-span-4 space-y-3">
+            <h3 className="text-xs font-extrabold text-zinc-400 uppercase tracking-widest px-1">Algorithm Index</h3>
+            <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+              {algos.map((algo) => {
+                const isSelected = selectedAlgo === algo.id;
+                const status = progress[algo.id] || 'Not Started';
+                const badgeColor = 
+                  status === 'Mastered' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                  status === 'In Progress' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                  'bg-zinc-500/10 text-zinc-500 border-zinc-500/20';
+
+                return (
+                  <button
+                    key={algo.id}
+                    onClick={() => {
+                      setSelectedAlgo(algo.id);
+                      setAnimStep(0);
+                    }}
+                    className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex justify-between items-center ${
+                      isSelected 
+                        ? 'bg-indigo-500/10 border-indigo-500/30 shadow-sm' 
+                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-350 dark:hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{algo.icon}</span>
+                      <div>
+                        <h4 className="text-xs font-extrabold text-zinc-900 dark:text-zinc-50">{algo.name}</h4>
+                        <p className="text-[10px] text-zinc-450 mt-0.5 leading-tight">{algo.desc}</p>
+                      </div>
+                    </div>
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleProgress(algo.id);
+                      }}
+                      className={`px-2 py-0.5 border rounded-full text-[9px] font-bold uppercase tracking-wider select-none hover:scale-105 active:scale-95 transition-transform ${badgeColor}`}
+                    >
+                      {status}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right panel: Simulation Workspace */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 space-y-6 shadow-sm">
+              
+              {/* Header meta */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-zinc-150 dark:border-zinc-800">
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                    {algos.find(a => a.id === selectedAlgo)?.name} Sandbox
+                  </h3>
+                  <p className="text-xs text-zinc-550 dark:text-zinc-400 mt-0.5">
+                    {activeDetails.purpose}
+                  </p>
+                </div>
+                
+                {/* Complexity badges */}
+                <div className="flex gap-2">
+                  <div className="px-3 py-1 bg-zinc-50/50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-zinc-800 rounded-xl text-center">
+                    <span className="block text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Time</span>
+                    <code className="text-xs font-bold text-indigo-500 dark:text-indigo-400">{activeDetails.timeComplexity}</code>
+                  </div>
+                  <div className="px-3 py-1 bg-zinc-50/50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-zinc-800 rounded-xl text-center">
+                    <span className="block text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Space</span>
+                    <code className="text-xs font-bold text-purple-500 dark:text-purple-400">{activeDetails.spaceComplexity}</code>
+                  </div>
+                </div>
+              </div>
+
+              {/* Simulation Canvas */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest">Simulation Screen</span>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-850 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-650 dark:text-zinc-300 transition-all cursor-pointer"
+                    >
+                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </button>
+                    <button 
+                      onClick={() => setAnimStep(0)}
+                      className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-850 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-650 dark:text-zinc-300 transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </button>
+                    <select
+                      value={animSpeed}
+                      onChange={(e) => setAnimSpeed(Number(e.target.value))}
+                      className="bg-zinc-100 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-800 text-xs px-2 py-1 rounded-lg text-zinc-650 dark:text-zinc-300 cursor-pointer"
+                    >
+                      <option value={2000}>Slow (2s)</option>
+                      <option value={1000}>Normal (1s)</option>
+                      <option value={500}>Fast (0.5s)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Animated frame */}
+                <div className="h-48 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-150 dark:border-zinc-850 rounded-2xl flex flex-col justify-center items-center p-6 relative overflow-hidden">
+                  <div className="flex gap-4 items-center justify-center">
+                    {activeDetails.visualSteps.map((step, idx) => {
+                      const isActive = idx === animStep;
+                      return (
+                        <div 
+                          key={idx}
+                          className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all duration-300 max-w-[140px] ${
+                            isActive 
+                              ? 'bg-indigo-500 border-indigo-600 text-white scale-110 shadow-lg shadow-indigo-500/20'
+                              : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-850 text-zinc-400 dark:text-zinc-600 opacity-60'
+                          }`}
+                        >
+                          <span className="block text-[8px] opacity-75 font-bold uppercase tracking-wider mb-1">Step {idx + 1}</span>
+                          {step}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Play pointer path */}
+                  <div className="absolute bottom-4 left-0 right-0 text-center">
+                    <span className="text-[10px] font-bold text-zinc-550 dark:text-zinc-400 px-3 py-1 bg-zinc-200/50 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-850 rounded-full select-none">
+                      Active: {activeDetails.visualSteps[animStep]}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Core Learning Information Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-zinc-50/50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-zinc-850 rounded-2xl space-y-2">
+                  <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Why selected in EcoShare?</h4>
+                  <p className="text-[11px] text-zinc-550 dark:text-zinc-400 leading-relaxed font-semibold">
+                    {activeDetails.whyUsed}
+                  </p>
+                </div>
+                <div className="p-4 bg-zinc-50/50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-zinc-850 rounded-2xl space-y-2">
+                  <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Real-life Industry Case Study</h4>
+                  <p className="text-[11px] text-zinc-550 dark:text-zinc-400 leading-relaxed font-semibold">
+                    Used widely in {activeDetails.realLife}
+                  </p>
+                </div>
+              </div>
+
+              {/* Pros & Cons list */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-zinc-150 dark:border-zinc-850">
+                <div className="space-y-2.5">
+                  <h4 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Advantages</h4>
+                  <ul className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-400 font-semibold list-inside list-disc">
+                    {activeDetails.advantages.map((adv, i) => <li key={i}>{adv}</li>)}
+                  </ul>
+                </div>
+                <div className="space-y-2.5">
+                  <h4 className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Disadvantages</h4>
+                  <ul className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-400 font-semibold list-inside list-disc">
+                    {activeDetails.disadvantages.map((dis, i) => <li key={i}>{dis}</li>)}
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (user?.role === 'Student') {
     const studentFilteredFoods = getFilteredAvailableFoods();
     const activeClaims = reservedFoods.filter(f => f.status === 'Reserved');
@@ -2027,6 +2397,7 @@ export const Dashboard = () => {
       { id: 'reservations', label: 'My Reservations', icon: FileSpreadsheet },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
+      { id: 'dsa_learning', label: 'DSA Learning', icon: BookOpen },
       { id: 'profile', label: 'My Profile', icon: User },
     ];
 
@@ -2270,6 +2641,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <RedistributionMap />
+              </motion.div>
+            )}
+            {activeTab === 'dsa_learning' && (
+              <motion.div
+                key="student-dsa-learning"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <DsaLearningCenter />
               </motion.div>
             )}
 
@@ -2624,6 +3005,7 @@ export const Dashboard = () => {
       { id: 'reservations', label: 'My Donations', icon: FileSpreadsheet },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
+      { id: 'dsa_learning', label: 'DSA Learning', icon: BookOpen },
       { id: 'profile', label: 'NGO Profile', icon: User },
     ];
 
@@ -2867,6 +3249,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <RedistributionMap />
+              </motion.div>
+            )}
+            {activeTab === 'dsa_learning' && (
+              <motion.div
+                key="ngo-dsa-learning"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <DsaLearningCenter />
               </motion.div>
             )}
 
@@ -3231,6 +3623,7 @@ export const Dashboard = () => {
       { id: 'overview', label: 'Analytics', icon: LayoutDashboard },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
+      { id: 'dsa_learning', label: 'DSA Learning', icon: BookOpen },
       { id: 'users', label: 'User Directory', icon: User },
       { id: 'listings', label: 'System Listings', icon: Utensils },
       { id: 'reports', label: 'System Reports', icon: FileSpreadsheet },
@@ -3365,6 +3758,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <RedistributionMap />
+              </motion.div>
+            )}
+            {activeTab === 'dsa_learning' && (
+              <motion.div
+                key="admin-dsa-learning"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <DsaLearningCenter />
               </motion.div>
             )}
 
@@ -3790,6 +4193,7 @@ export const Dashboard = () => {
     { id: 'listings', label: 'Food Listings', icon: Utensils },
     { id: 'command_center', label: 'Command Center', icon: Activity },
     { id: 'transit_map', label: 'Transit Map', icon: Compass },
+    { id: 'dsa_learning', label: 'DSA Learning', icon: BookOpen },
     { id: 'profile', label: 'Kitchen Profile', icon: User },
   ];
 
@@ -4002,6 +4406,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <RedistributionMap />
+              </motion.div>
+            )}
+            {activeTab === 'dsa_learning' && (
+              <motion.div
+                key="kitchen-dsa-learning"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <DsaLearningCenter />
               </motion.div>
             )}
 
