@@ -61,7 +61,7 @@ export const getAllFoods = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { category, status, createdBy } = req.query;
+    const { category, status, createdBy, reservedBy } = req.query;
     const query: any = {};
 
     if (category) {
@@ -74,6 +74,10 @@ export const getAllFoods = async (
 
     if (createdBy) {
       query.createdBy = createdBy;
+    }
+
+    if (reservedBy) {
+      query.reservedBy = reservedBy;
     }
 
     // Return foods populated with creator's name and email
@@ -207,6 +211,181 @@ export const deleteFood = async (
     res.status(200).json({
       success: true,
       message: 'Food listing deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const reserveFood = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication required to reserve food items',
+      });
+      return;
+    }
+
+    const food = await Food.findById(id);
+    if (!food) {
+      res.status(404).json({
+        success: false,
+        message: `Food item not found with id: ${id}`,
+      });
+      return;
+    }
+
+    if (food.status !== 'Available') {
+      res.status(400).json({
+        success: false,
+        message: `Food item is not available for reservation (Current status: ${food.status})`,
+      });
+      return;
+    }
+
+    // Set reservedBy and status
+    food.status = 'Reserved';
+    food.reservedBy = req.user._id;
+
+    await food.save();
+
+    // Populate creator detail
+    const updatedFood = await Food.findById(id)
+      .populate('createdBy', 'name email role')
+      .populate('reservedBy', 'name email role');
+
+    res.status(200).json({
+      success: true,
+      message: 'Food item successfully reserved',
+      food: updatedFood,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const cancelReservation = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication required to cancel reservations',
+      });
+      return;
+    }
+
+    const food = await Food.findById(id);
+    if (!food) {
+      res.status(404).json({
+        success: false,
+        message: `Food item not found with id: ${id}`,
+      });
+      return;
+    }
+
+    if (food.status !== 'Reserved') {
+      res.status(400).json({
+        success: false,
+        message: `Food item does not have a current reservation (Current status: ${food.status})`,
+      });
+      return;
+    }
+
+    // Access control: creator, reserver, or Admin
+    const isReserver = food.reservedBy && food.reservedBy.toString() === req.user._id.toString();
+    const isCreator = food.createdBy.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'Admin';
+
+    if (!isReserver && !isCreator && !isAdmin) {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to cancel this reservation.',
+      });
+      return;
+    }
+
+    // Reset status and clear reservedBy reference
+    food.status = 'Available';
+    food.reservedBy = undefined;
+
+    await food.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Reservation successfully cancelled. Food is now available.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const collectFood = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication required to update collection status',
+      });
+      return;
+    }
+
+    const food = await Food.findById(id);
+    if (!food) {
+      res.status(404).json({
+        success: false,
+        message: `Food item not found with id: ${id}`,
+      });
+      return;
+    }
+
+    if (food.status !== 'Reserved') {
+      res.status(400).json({
+        success: false,
+        message: `Only reserved food items can be marked as collected (Current status: ${food.status})`,
+      });
+      return;
+    }
+
+    // Access control: creator, reserver, or Admin
+    const isReserver = food.reservedBy && food.reservedBy.toString() === req.user._id.toString();
+    const isCreator = food.createdBy.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'Admin';
+
+    if (!isReserver && !isCreator && !isAdmin) {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to update collection status.',
+      });
+      return;
+    }
+
+    // Update status
+    food.status = 'Collected';
+
+    await food.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Food item successfully marked as collected.',
     });
   } catch (error) {
     next(error);

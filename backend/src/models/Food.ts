@@ -68,6 +68,10 @@ const foodSchema = new Schema<IFood, FoodModel>(
       ref: 'User',
       required: [true, 'Food listing must belong to a user'],
     },
+    reservedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
   },
   {
     timestamps: true,

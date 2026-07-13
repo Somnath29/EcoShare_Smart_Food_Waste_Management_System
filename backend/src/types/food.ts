@@ -15,6 +15,7 @@ export interface IFood extends Document {
   image?: string;
   status: FoodStatus;
   createdBy: Types.ObjectId;
+  reservedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }

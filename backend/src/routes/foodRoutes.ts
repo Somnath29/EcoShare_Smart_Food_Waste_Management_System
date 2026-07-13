@@ -5,6 +5,9 @@ import {
   getFoodById,
   updateFood,
   deleteFood,
+  reserveFood,
+  cancelReservation,
+  collectFood,
 } from '../controllers/foodController.js';
 import {
   validateCreateFood,
@@ -41,5 +44,9 @@ router.delete(
   restrictTo('Kitchen Staff', 'Admin'),
   deleteFood
 );
+
+router.patch('/:id/reserve', protect, reserveFood);
+router.patch('/:id/cancel', protect, cancelReservation);
+router.patch('/:id/collect', protect, collectFood);
 
 export default router;
