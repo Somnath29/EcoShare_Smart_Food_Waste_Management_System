@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { useToast } from '../components/ui/Toast.js';
 import { useTheme } from '../context/ThemeContext.js';
 import { Skeleton, CardSkeleton } from '../components/ui/Skeleton.js';
 import { motion, AnimatePresence } from 'framer-motion';
-import L from 'leaflet';
 import {
   ResponsiveContainer,
   AreaChart, Area,
@@ -20,7 +19,7 @@ import {
   FileSpreadsheet, Plus, Edit, Trash2, Search, SlidersHorizontal, 
   List, Grid, ChevronRight, ArrowLeft, LogOut, LayoutDashboard,
   Utensils, CalendarDays, Compass, Loader2, Play, Pause, RotateCcw, Zap, BookOpen,
-  Activity, Wifi, Cpu, Server
+  Activity, Wifi, Cpu, Server, Presentation, Brain
 } from 'lucide-react';
 import { 
   getFoodsApi, 
@@ -34,8 +33,10 @@ import {
   updateUserRoleApi,
   deleteUserApi
 } from '../services/api.js';
+import { AIDecisionCenter } from '../components/AIDecisionCenter.js';
+import { PresentationMode } from '../components/PresentationMode.js';
 
-type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center' | 'transit_map' | 'dsa_learning' | 'analytics';
+type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center' | 'transit_map' | 'dsa_learning' | 'analytics' | 'ai_center';
 
 // Reusable progress ring
 const ProgressRing: React.FC<{ percentage: number; label: string; colorClass?: string }> = ({ 
@@ -191,6 +192,7 @@ export const Dashboard = () => {
 
   // Navigation state
   const [activeTab, setActiveTab] = useState<TabView>('overview');
+  const [presentationOpen, setPresentationOpen] = useState(false);
   
   // App states
   const [foods, setFoods] = useState<any[]>([]);
@@ -755,7 +757,8 @@ export const Dashboard = () => {
     children: React.ReactNode;
     onLogout: () => void;
     extraHeaderAction?: React.ReactNode;
-  }> = ({ user, activeTab, setActiveTab, tabs, children, onLogout, extraHeaderAction }) => {
+    onPresentationOpen?: () => void;
+  }> = ({ user, activeTab, setActiveTab, tabs, children, onLogout, extraHeaderAction, onPresentationOpen }) => {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex flex-col md:flex-row bg-zinc-50/40 dark:bg-zinc-950/40 transition-colors duration-300 relative">
         
@@ -798,6 +801,17 @@ export const Dashboard = () => {
 
           <div className="space-y-3">
             {extraHeaderAction && <div className="px-1">{extraHeaderAction}</div>}
+            
+            {onPresentationOpen && (
+              <button
+                onClick={onPresentationOpen}
+                className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-xl transition-all cursor-pointer"
+              >
+                <Presentation className="h-4 w-4" />
+                <span>Showcase Mode</span>
+              </button>
+            )}
+
             <button
               onClick={onLogout}
               className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all cursor-pointer"
@@ -817,7 +831,18 @@ export const Dashboard = () => {
               </div>
               <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[120px]">{user?.name}</span>
             </div>
-            {extraHeaderAction}
+            <div className="flex items-center gap-2">
+              {onPresentationOpen && (
+                <button
+                  onClick={onPresentationOpen}
+                  className="p-1.5 rounded-lg border border-emerald-250 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all cursor-pointer"
+                  title="Showcase Mode"
+                >
+                  <Presentation className="h-4 w-4" />
+                </button>
+              )}
+              {extraHeaderAction}
+            </div>
           </div>
           <div className="flex space-x-1 overflow-x-auto scrollbar-none py-1 border-t border-zinc-100 dark:border-zinc-800/60 pt-2">
             {tabs.map((tab) => {
@@ -1583,8 +1608,7 @@ export const Dashboard = () => {
     const [co2Offset, setCo2Offset] = useState<number>(98.2);
     const [volunteers, setVolunteers] = useState<number>(32);
     const [deliveries, setDeliveries] = useState<number>(3);
-    const [deliveryStep, setDeliveryStep] = useState<number>(1);
-    const [systemLoad, setSystemLoad] = useState<number[]>([24, 28, 22, 35, 29, 31]);
+    // deliveryStep and systemLoad reserved for future telemetry widgets
 
     const [activities, setActivities] = useState<any[]>([
       { id: '1', type: 'rescue', message: 'Feeding Hearts NGO claimed 30 kg of surplus Pasta from Gordon Kitchen.', time: 'Just now', badge: 'Rescue', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
@@ -1602,10 +1626,6 @@ export const Dashboard = () => {
         setCo2Offset(prev => parseFloat((prev + 0.3).toFixed(1)));
         setVolunteers(prev => Math.max(25, Math.min(45, prev + (Math.random() > 0.5 ? 1 : -1))));
         setDeliveries(prev => Math.max(1, Math.min(8, prev + (Math.random() > 0.7 ? 1 : Math.random() > 0.7 ? -1 : 0))));
-        setSystemLoad(prev => [...prev.slice(1), Math.floor(Math.random() * 20) + 15]);
-
-        // Stepper increment
-        setDeliveryStep(prev => (prev >= 4 ? 1 : prev + 1));
 
         // Push new live activity feed event
         const sources = [
@@ -1724,59 +1744,9 @@ export const Dashboard = () => {
               </div>
             </div>
 
-            {/* Delivery Stepper Tracker */}
-            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 mb-4">
-                <Compass className="h-4.5 w-4.5 text-emerald-500 animate-spin" style={{ animationDuration: '6s' }} />
-                Active Route optimization: Dijkstra Loop #409
-              </h3>
-              <div className="bg-zinc-50/50 dark:bg-zinc-950/20 border border-zinc-150 dark:border-zinc-800/80 p-6 rounded-2xl">
-                <div className="flex justify-between items-center text-xs font-bold text-zinc-500 mb-6">
-                  <span>SENDER: Gordon Kitchen</span>
-                  <span className="text-emerald-500 font-mono">DISPATCH: In Transit (Route C)</span>
-                  <span>DESTINATION: Hope NGO</span>
-                </div>
-                {/* Stepper row */}
-                <div className="relative flex justify-between items-center w-full">
-                  {/* Background progress bar line */}
-                  <div className="absolute top-1/2 left-0 right-0 h-1 bg-zinc-250 dark:bg-zinc-800 transform -translate-y-1/2 z-0" />
-                  <div
-                    className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 transform -translate-y-1/2 z-0 transition-all duration-700"
-                    style={{ width: `${((deliveryStep - 1) / 3) * 100}%` }}
-                  />
+          </div>{/* close lg:col-span-8 */}
 
-                  {[
-                    { label: 'Food Logged', desc: 'Gordon Kitchen' },
-                    { label: 'Claim Verified', desc: 'NGO matched' },
-                    { label: 'In Transit', desc: 'Volunteer assigned' },
-                    { label: 'Delivered', desc: 'Meals handed over' }
-                  ].map((stepInfo, idx) => {
-                    const stepNum = idx + 1;
-                    const isActive = stepNum === deliveryStep;
-                    const isCompleted = stepNum < deliveryStep;
-                    return (
-                      <div key={idx} className="relative z-10 flex flex-col items-center">
-                        <div className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                          isCompleted
-                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/10'
-                            : isActive
-                            ? 'bg-amber-400 border-amber-400 text-zinc-900 animate-pulse scale-110 shadow-lg shadow-amber-500/10'
-                            : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-800 text-zinc-400'
-                        }`}>
-                          {isCompleted ? '✓' : stepNum}
-                        </div>
-                        <span className={`text-[10px] font-bold mt-2 ${isActive ? 'text-amber-500 font-black' : isCompleted ? 'text-emerald-600' : 'text-zinc-450 dark:text-zinc-500'}`}>
-                          {stepInfo.label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* System diagnostics sidebar */}
+          {/* Network Diagnostics Sidebar */}
           <div className="lg:col-span-4 space-y-6">
             {/* Health Diagnostics Panel */}
             <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-sm">
@@ -1793,44 +1763,16 @@ export const Dashboard = () => {
                 ].map((item, idx) => {
                   const ItemIcon = item.icon;
                   return (
-                    <div key={idx} className="flex justify-between items-center p-3 border border-zinc-150 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 rounded-2xl">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 ${item.color}`}>
-                          <ItemIcon className="h-4 w-4" />
-                        </div>
-                        <span className="text-[11px] font-bold text-zinc-500">{item.label}</span>
+                    <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                      <div className="flex items-center gap-3">
+                        <ItemIcon className={`h-4 w-4 ${item.color}`} />
+                        <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{item.label}</span>
                       </div>
-                      <span className="text-xs font-mono font-bold text-zinc-700 dark:text-zinc-350">{item.value}</span>
+                      <span className="text-xs font-semibold text-zinc-500">{item.value}</span>
                     </div>
                   );
                 })}
               </div>
-
-              {/* Dynamic load graph */}
-              <div className="mt-6 pt-4 border-t border-zinc-150 dark:border-zinc-800/80 space-y-2">
-                <div className="flex justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  <span>Server Node CPU load</span>
-                  <span className="font-mono text-emerald-500">{systemLoad[systemLoad.length - 1]}% Load</span>
-                </div>
-                <div className="flex items-end gap-1.5 h-16 pt-2 justify-between">
-                  {systemLoad.map((load, idx) => (
-                    <div
-                      key={idx}
-                      className="w-full bg-emerald-500/20 dark:bg-emerald-500/10 border-t border-emerald-500 rounded-t-sm transition-all duration-500"
-                      style={{ height: `${load}%` }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Micro-learning carbon block */}
-            <div className="p-6 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/15 rounded-3xl space-y-3">
-              <span className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-widest">Global Impact Audit</span>
-              <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 leading-snug">Why Carbon Equivalency Matters</h4>
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Decomposing food waste accounts for 8% of global greenhouse emissions. Redirecting surplus meals directly offsets methane emissions from anaerobic landfill decomposition.
-              </p>
             </div>
           </div>
         </div>
@@ -1838,194 +1780,7 @@ export const Dashboard = () => {
     );
   };
 
-  // Redistribution Map View using Leaflet
-  const RedistributionMap: React.FC = () => {
-    const { theme } = useTheme();
-    const mapContainerRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<L.Map | null>(null);
-    const tileLayerRef = useRef<L.TileLayer | null>(null);
-    const volunteerMarkerRef = useRef<L.Marker | null>(null);
-    const [coordIndex, setCoordIndex] = useState<number>(0);
-    const [eta, setEta] = useState<number>(8); // minutes remaining
-
-    const routeCoordinates = [
-      [43.0715, -89.3980],
-      [43.0715, -89.3950],
-      [43.0740, -89.3950],
-      [43.0740, -89.3910],
-      [43.0760, -89.3900]
-    ];
-
-    const locations = [
-      { name: 'Gordon Kitchen', type: 'Restaurant', coords: [43.0715, -89.3980], icon: '🍳', color: 'bg-indigo-500 text-white' },
-      { name: 'Central Campus Hub', type: 'College', coords: [43.0750, -89.4020], icon: '🎓', color: 'bg-emerald-500 text-white' },
-      { name: 'South Dorms', type: 'College', coords: [43.0690, -89.4050], icon: '🎓', color: 'bg-emerald-500 text-white' },
-      { name: 'Feeding Hearts Shelter', type: 'NGO', coords: [43.0760, -89.3900], icon: '❤️', color: 'bg-rose-500 text-white animate-pulse' },
-      { name: 'Hope Food Foundation', type: 'NGO', coords: [43.0820, -89.4100], icon: '❤️', color: 'bg-rose-500 text-white' },
-      { name: 'Second Harvest Bank', type: 'Food Bank', coords: [43.0650, -89.3920], icon: '🏦', color: 'bg-amber-500 text-white' }
-    ];
-
-    // Tick the moving volunteer marker position
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setCoordIndex((prev) => {
-          const next = prev >= routeCoordinates.length - 1 ? 0 : prev + 1;
-          // decrease ETA as route progresses
-          setEta(Math.max(1, 8 - Math.round((next / (routeCoordinates.length - 1)) * 7)));
-          return next;
-        });
-      }, 3000);
-
-      return () => clearInterval(interval);
-    }, []);
-
-    // Instantiate Map
-    useEffect(() => {
-      if (!mapContainerRef.current) return;
-      if (mapInstanceRef.current) return;
-
-      const map = L.map(mapContainerRef.current, {
-        zoomControl: false
-      }).setView([43.0731, -89.4012], 14);
-      mapInstanceRef.current = map;
-
-      // Zoom control bottom-right
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-      // Setup custom marker icons
-      const createHtmlIcon = (colorClass: string, iconHtml: string) => {
-        return L.divIcon({
-          className: 'custom-map-icon',
-          html: `<div class="p-2 rounded-full border-2 border-white dark:border-zinc-950 shadow-md flex items-center justify-center ${colorClass}" style="width: 34px; height: 34px; font-size: 14px;">${iconHtml}</div>`,
-          iconSize: [34, 34],
-          iconAnchor: [17, 17]
-        });
-      };
-
-      // Add static landmarks
-      locations.forEach((loc) => {
-        L.marker(loc.coords as L.LatLngExpression, {
-          icon: createHtmlIcon(loc.color, loc.icon)
-        })
-        .bindPopup(`<strong>${loc.name}</strong><br/>Type: ${loc.type}`)
-        .addTo(map);
-      });
-
-      // Add shortest route path line
-      L.polyline(routeCoordinates as L.LatLngExpression[], {
-        color: '#10b981',
-        weight: 4,
-        opacity: 0.8,
-        dashArray: '5, 8'
-      }).addTo(map);
-
-      // Add volunteer bike marker
-      const startCoord = routeCoordinates[0];
-      const bikeIcon = L.divIcon({
-        className: 'custom-bike-icon',
-        html: `<div class="p-2 rounded-full border-2 border-white dark:border-zinc-950 bg-sky-500 text-white shadow-xl flex items-center justify-center scale-110 animate-bounce" style="width: 36px; height: 36px; font-size: 16px;">🚲</div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18]
-      });
-
-      const volunteerMarker = L.marker(startCoord as L.LatLngExpression, { icon: bikeIcon })
-        .bindPopup("<strong>Volunteer Dispatch</strong><br/>Rider: Alice S.<br/>Transit: MERN box #202")
-        .addTo(map);
-      volunteerMarkerRef.current = volunteerMarker;
-
-      return () => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.remove();
-          mapInstanceRef.current = null;
-        }
-      };
-    }, []);
-
-    // Theme tile layer updates
-    useEffect(() => {
-      if (!mapInstanceRef.current) return;
-      if (tileLayerRef.current) {
-        tileLayerRef.current.remove();
-      }
-
-      const tileUrl = theme === 'dark'
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-
-      const tileLayer = L.tileLayer(tileUrl, {
-        attribution: '&copy; CartoDB'
-      }).addTo(mapInstanceRef.current);
-      tileLayerRef.current = tileLayer;
-    }, [theme]);
-
-    // Update volunteer position on coordinate tick
-    useEffect(() => {
-      if (!volunteerMarkerRef.current) return;
-      const currentCoord = routeCoordinates[coordIndex];
-      volunteerMarkerRef.current.setLatLng(currentCoord as L.LatLngExpression);
-    }, [coordIndex]);
-
-    return (
-      <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
-        <div className="grid grid-cols-1 lg:grid-cols-12">
-          {/* Map Viewer */}
-          <div className="lg:col-span-8 h-[450px] relative z-10" ref={mapContainerRef} />
-
-          {/* Uber Eats Side Panel */}
-          <div className="lg:col-span-4 p-6 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-zinc-250 dark:border-zinc-800 bg-zinc-50/20 dark:bg-zinc-950/10">
-            <div className="space-y-6">
-              <div>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full text-[9px] font-bold uppercase tracking-wider">
-                  Live Dispatch Route
-                </span>
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mt-1">Dijkstra Shortest Path</h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-450 mt-0.5">Eco-friendly transit routing calculations in real-time.</p>
-              </div>
-
-              {/* Order Info */}
-              <div className="space-y-4">
-                <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-sm shrink-0">
-                    {eta}
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-wide">ESTIMATED ARRIVAL</span>
-                    <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100">{eta} minutes remaining</h4>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3">
-                  <div className="flex justify-between text-xs font-semibold text-zinc-500">
-                    <span>Total Distance</span>
-                    <span className="text-zinc-800 dark:text-zinc-200">1.8 miles</span>
-                  </div>
-                  <div className="flex justify-between text-xs font-semibold text-zinc-500">
-                    <span>Avg Transit Time</span>
-                    <span className="text-zinc-800 dark:text-zinc-200">8 minutes</span>
-                  </div>
-                  <div className="flex justify-between text-xs font-semibold text-zinc-500">
-                    <span>Assigned Dispatch</span>
-                    <span className="text-sky-500 font-bold">Alice S. (Rider)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Steps Timeline info */}
-            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-6 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-indigo-500 animate-ping"></span>
-                <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest">Active Dispatch Log</span>
-              </div>
-              <p className="text-xs text-zinc-650 dark:text-zinc-350 leading-relaxed font-semibold">
-                Rider currently navigating intersection of University Avenue. Dijkstra route optimization successfully refreshed.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // LiveCommandCenter and RedistributionMap delegate to AIDecisionCenter below
 
   // DSA Learning Center Component
   const DsaLearningCenter: React.FC = () => {
@@ -2782,6 +2537,7 @@ export const Dashboard = () => {
     const studentTabs = [
       { id: 'overview', label: 'Browse Food', icon: Utensils },
       { id: 'reservations', label: 'My Reservations', icon: FileSpreadsheet },
+      { id: 'ai_center', label: 'AI Decision', icon: Brain },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
       { id: 'analytics', label: 'Impact Analytics', icon: LayoutDashboard },
@@ -2790,12 +2546,14 @@ export const Dashboard = () => {
     ];
 
     return (
+      <>
       <DashboardLayout
         user={user}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         tabs={studentTabs}
         onLogout={logout}
+        onPresentationOpen={() => setPresentationOpen(true)}
         extraHeaderAction={
           activeClaims.length > 0 ? (
             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wider">
@@ -3011,6 +2769,16 @@ export const Dashboard = () => {
                 <AlgorithmsInAction defaultAlgo="binary_search" />
               </motion.div>
             )}
+            {activeTab === 'ai_center' && (
+              <motion.div
+                key="student-ai-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <AIDecisionCenter />
+              </motion.div>
+            )}
             {activeTab === 'command_center' && (
               <motion.div
                 key="student-command-center"
@@ -3027,8 +2795,18 @@ export const Dashboard = () => {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
+                className="flex flex-col items-center justify-center py-24 gap-4"
               >
-                <RedistributionMap />
+                <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                  <Compass className="h-12 w-12 text-indigo-500" />
+                </div>
+                <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-50">Transit Map</h3>
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm text-center max-w-sm">
+                  Live delivery route visualisation requires GPS integration. Switch to the AI Decision Center to see optimised routes.
+                </p>
+                <button onClick={() => setActiveTab('ai_center')} className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition-colors cursor-pointer">
+                  Open AI Decision Center
+                </button>
               </motion.div>
             )}
             {activeTab === 'dsa_learning' && (
@@ -3390,6 +3168,12 @@ export const Dashboard = () => {
           )}
         </AnimatePresence>
       </DashboardLayout>
+      <AnimatePresence>
+        {presentationOpen && (
+          <PresentationMode onClose={() => setPresentationOpen(false)} />
+        )}
+      </AnimatePresence>
+      </>
     );
   }
 
@@ -3401,6 +3185,7 @@ export const Dashboard = () => {
     const ngoTabs = [
       { id: 'overview', label: 'Browse Donations', icon: Utensils },
       { id: 'reservations', label: 'My Donations', icon: FileSpreadsheet },
+      { id: 'ai_center', label: 'AI Decision', icon: Brain },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
       { id: 'analytics', label: 'Impact Analytics', icon: LayoutDashboard },
@@ -3409,12 +3194,14 @@ export const Dashboard = () => {
     ];
 
     return (
+      <>
       <DashboardLayout
         user={user}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         tabs={ngoTabs}
         onLogout={logout}
+        onPresentationOpen={() => setPresentationOpen(true)}
         extraHeaderAction={
           activeClaims.length > 0 ? (
             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
@@ -3640,14 +3427,34 @@ export const Dashboard = () => {
                 <LiveCommandCenter />
               </motion.div>
             )}
+            {activeTab === 'ai_center' && (
+              <motion.div
+                key="ngo-ai-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <AIDecisionCenter />
+              </motion.div>
+            )}
             {activeTab === 'transit_map' && (
               <motion.div
                 key="ngo-transit-map"
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
+                className="flex flex-col items-center justify-center py-24 gap-4"
               >
-                <RedistributionMap />
+                <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                  <Compass className="h-12 w-12 text-indigo-500" />
+                </div>
+                <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-50">Transit Map</h3>
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm text-center max-w-sm">
+                  Live delivery route visualisation. Use the AI Decision Center to see optimised routes.
+                </p>
+                <button onClick={() => setActiveTab('command_center')} className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition-colors cursor-pointer">
+                  Open AI Decision Center
+                </button>
               </motion.div>
             )}
             {activeTab === 'dsa_learning' && (
@@ -4015,6 +3822,12 @@ export const Dashboard = () => {
           )}
         </AnimatePresence>
       </DashboardLayout>
+      <AnimatePresence>
+        {presentationOpen && (
+          <PresentationMode onClose={() => setPresentationOpen(false)} />
+        )}
+      </AnimatePresence>
+      </>
     );
   }
 
@@ -4030,6 +3843,7 @@ export const Dashboard = () => {
 
     const adminTabs = [
       { id: 'overview', label: 'System Overview', icon: ShieldAlert },
+      { id: 'ai_center', label: 'AI Decision', icon: Brain },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
       { id: 'analytics', label: 'Impact Analytics', icon: LayoutDashboard },
@@ -4041,12 +3855,14 @@ export const Dashboard = () => {
     ];
 
     return (
+      <>
       <DashboardLayout
         user={user}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         tabs={adminTabs}
         onLogout={logout}
+        onPresentationOpen={() => setPresentationOpen(true)}
       >
         <AnimatePresence mode="wait">
             
@@ -4150,6 +3966,16 @@ export const Dashboard = () => {
                 </div>
               </motion.div>
             )}
+            {activeTab === 'ai_center' && (
+              <motion.div
+                key="admin-ai-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <AIDecisionCenter />
+              </motion.div>
+            )}
             {activeTab === 'command_center' && (
               <motion.div
                 key="admin-command-center"
@@ -4166,8 +3992,18 @@ export const Dashboard = () => {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
+                className="flex flex-col items-center justify-center py-24 gap-4"
               >
-                <RedistributionMap />
+                <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                  <Compass className="h-12 w-12 text-indigo-500" />
+                </div>
+                <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-50">Transit Map</h3>
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm text-center max-w-sm">
+                  Live delivery route visualisation. Use the AI Decision Center to see optimised routes.
+                </p>
+                <button onClick={() => setActiveTab('command_center')} className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition-colors cursor-pointer">
+                  Open AI Decision Center
+                </button>
               </motion.div>
             )}
             {activeTab === 'dsa_learning' && (
@@ -4605,12 +4441,19 @@ export const Dashboard = () => {
           )}
         </AnimatePresence>
       </DashboardLayout>
+      <AnimatePresence>
+        {presentationOpen && (
+          <PresentationMode onClose={() => setPresentationOpen(false)} />
+        )}
+      </AnimatePresence>
+      </>
     );
   }
 
   const kitchenTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'listings', label: 'Food Listings', icon: Utensils },
+    { id: 'ai_center', label: 'AI Decision', icon: Brain },
     { id: 'command_center', label: 'Command Center', icon: Activity },
     { id: 'transit_map', label: 'Transit Map', icon: Compass },
     { id: 'analytics', label: 'Impact Analytics', icon: LayoutDashboard },
@@ -4619,12 +4462,14 @@ export const Dashboard = () => {
   ];
 
   return (
+    <>
     <DashboardLayout
       user={user}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       tabs={kitchenTabs}
       onLogout={logout}
+      onPresentationOpen={() => setPresentationOpen(true)}
       extraHeaderAction={
         <button
           onClick={handleAddView}
@@ -4809,6 +4654,16 @@ export const Dashboard = () => {
                 <AlgorithmsInAction defaultAlgo="min_heap" />
               </motion.div>
             )}
+            {activeTab === 'ai_center' && (
+              <motion.div
+                key="kitchen-ai-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <AIDecisionCenter />
+              </motion.div>
+            )}
             {activeTab === 'command_center' && (
               <motion.div
                 key="kitchen-command-center"
@@ -4825,8 +4680,18 @@ export const Dashboard = () => {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
+                className="flex flex-col items-center justify-center py-24 gap-4"
               >
-                <RedistributionMap />
+                <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                  <Compass className="h-12 w-12 text-indigo-500" />
+                </div>
+                <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-50">Transit Map</h3>
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm text-center max-w-sm">
+                  Live delivery route visualisation. Use the AI Decision Center to see optimised routes.
+                </p>
+                <button onClick={() => setActiveTab('command_center')} className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition-colors cursor-pointer">
+                  Open AI Decision Center
+                </button>
               </motion.div>
             )}
             {activeTab === 'dsa_learning' && (
@@ -5577,5 +5442,11 @@ export const Dashboard = () => {
         )}
       </AnimatePresence>
     </DashboardLayout>
+    <AnimatePresence>
+      {presentationOpen && (
+        <PresentationMode onClose={() => setPresentationOpen(false)} />
+      )}
+    </AnimatePresence>
+    </>
   );
 };
