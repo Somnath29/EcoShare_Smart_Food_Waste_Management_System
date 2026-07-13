@@ -537,9 +537,9 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <form onSubmit={handleContactSubmit} className="space-y-5">
+          <form onSubmit={handleContactSubmit} className="space-y-6">
             <div>
-              <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
                 Full Name
               </label>
               <input
@@ -547,12 +547,13 @@ export const LandingPage: React.FC = () => {
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
                 placeholder="Gordon Vance"
-                className="w-full px-4 py-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm transition-all"
+                className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm transition-all"
+                required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
                 Email Address
               </label>
               <input
@@ -560,12 +561,13 @@ export const LandingPage: React.FC = () => {
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
                 placeholder="gordon@example.com"
-                className="w-full px-4 py-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm transition-all"
+                className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm transition-all"
+                required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
                 Message
               </label>
               <textarea
@@ -573,7 +575,8 @@ export const LandingPage: React.FC = () => {
                 onChange={(e) => setContactMessage(e.target.value)}
                 placeholder="Tell us how we can help..."
                 rows={4}
-                className="w-full px-4 py-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm transition-all"
+                className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm transition-all"
+                required
               />
             </div>
 
@@ -594,66 +597,6 @@ export const LandingPage: React.FC = () => {
           </form>
         </div>
       </section>
-
-      {/* Professional Footer */}
-      <footer className="py-12 border-t border-zinc-250 dark:border-zinc-800 bg-zinc-950 text-zinc-400 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
-          
-          <div className="space-y-4">
-            <h4 className="text-sm font-bold text-white tracking-wide">EcoShare Network</h4>
-            <p className="leading-relaxed text-zinc-450">
-              Connecting commercial dining halls and local restaurants with volunteers and NGOs to reduce hunger and offset emissions.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white tracking-wide">Redistribution</h4>
-            <ul className="space-y-2">
-              <li><Link to="/login" className="hover:text-white transition-colors">Kitchen Dashboard</Link></li>
-              <li><Link to="/login" className="hover:text-white transition-colors">NGO Portal</Link></li>
-              <li><Link to="/login" className="hover:text-white transition-colors">Student Hub</Link></li>
-            </ul>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white tracking-wide">Legal</h4>
-            <ul className="space-y-2">
-              <li><span className="cursor-pointer hover:text-white transition-colors">Food Donation Act</span></li>
-              <li><span className="cursor-pointer hover:text-white transition-colors">Privacy Policy</span></li>
-              <li><span className="cursor-pointer hover:text-white transition-colors">Terms of Service</span></li>
-            </ul>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white tracking-wide">Environmental Support</h4>
-            <p className="text-zinc-450 leading-relaxed mb-3">
-              Get notified of carbon rescue milestones and volunteer drives.
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="Email address"
-                className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 max-w-[150px] w-full"
-              />
-              <button
-                onClick={() => toast('success', 'Subscribed to carbon rescue digests!')}
-                className="px-3 py-2 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 cursor-pointer"
-              >
-                Join
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-zinc-900 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-zinc-500">
-          <p>© 2026 EcoShare Smart Food Waste Management & Redistribution. All rights reserved.</p>
-          <p className="font-semibold text-zinc-450 inline-flex items-center gap-1">
-            <Globe className="h-3.5 w-3.5" /> Built for Ecological Global Restoration
-          </p>
-        </div>
-      </footer>
-
     </div>
   );
 };
