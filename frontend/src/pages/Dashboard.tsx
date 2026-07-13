@@ -144,6 +144,34 @@ export const Dashboard = () => {
     }
   };
 
+  const loadUsersList = async () => {
+    try {
+      setLoadingUsers(true);
+      const data = await getUsersApi();
+      if (data.success && data.users) {
+        setUsersList(data.users);
+      }
+    } catch (error: any) {
+      toast('error', error.message || 'Failed to fetch registered users list');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const loadSystemListings = async () => {
+    try {
+      setLoadingSystemListings(true);
+      const data = await getFoodsApi({});
+      if (data.success && data.foods) {
+        setSystemListings(data.foods);
+      }
+    } catch (error: any) {
+      toast('error', error.message || 'Failed to fetch system food listings');
+    } finally {
+      setLoadingSystemListings(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     if (user.role === 'Student') {
@@ -158,10 +186,74 @@ export const Dashboard = () => {
           console.error(e);
         }
       }
+    } else if (user.role === 'Admin') {
+      loadUsersList();
+      loadSystemListings();
     } else {
       loadFoods();
     }
   }, [user]);
+
+  // Admin handlers
+  const handleUpdateUserRole = async (userId: string, newRole: string) => {
+    try {
+      const data = await updateUserRoleApi(userId, newRole);
+      if (data.success) {
+        toast('success', 'User role updated successfully!');
+        setUsersList(prev => prev.map(u => u._id === userId ? { ...u, role: newRole } : u));
+      }
+    } catch (error: any) {
+      toast('error', error.message || 'Failed to update user role');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const data = await deleteUserApi(userId);
+      if (data.success) {
+        toast('success', 'User account deleted successfully');
+        setUsersList(prev => prev.filter(u => u._id !== userId));
+        setAdminConfirmDeleteUserId(null);
+      }
+    } catch (error: any) {
+      toast('error', error.message || 'Failed to delete user');
+    }
+  };
+
+  const handleAdminDeleteListing = async (foodId: string) => {
+    try {
+      const data = await deleteFoodApi(foodId);
+      if (data.success) {
+        toast('success', 'Listing deleted successfully by administrator');
+        setSystemListings(prev => prev.filter(item => item._id !== foodId));
+      }
+    } catch (error: any) {
+      toast('error', error.message || 'Failed to delete listing');
+    }
+  };
+
+  const getFilteredUsers = () => {
+    return usersList.filter(u => {
+      const matchesSearch = u.name.toLowerCase().includes(adminUserSearch.toLowerCase()) || 
+                            u.email.toLowerCase().includes(adminUserSearch.toLowerCase());
+      const matchesRole = adminUserRoleFilter === 'All' || u.role === adminUserRoleFilter;
+      return matchesSearch && matchesRole;
+    });
+  };
+
+  const getFilteredSystemListings = () => {
+    return systemListings
+      .filter(item => {
+        const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (sortBy === 'quantity-desc') return b.quantity - a.quantity;
+        return 0;
+      });
+  };
 
   // Student specific handlers
   const handleReserveFood = async (foodId: string) => {
@@ -1621,6 +1713,568 @@ export const Dashboard = () => {
                     className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer"
                   >
                     Confirm Claim Donation
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  if (user?.role === 'Admin') {
+    const adminFilteredUsers = getFilteredUsers();
+    const adminFilteredListings = getFilteredSystemListings();
+
+    // Compute stats
+    const totalListings = systemListings.length;
+    const activeListings = systemListings.filter(l => l.status === 'Available').length;
+    const reservedListings = systemListings.filter(l => l.status === 'Reserved').length;
+    const collectedListings = systemListings.filter(l => l.status === 'Collected').length;
+    const totalRescuedWeight = systemListings
+      .filter(l => l.status === 'Collected')
+      .reduce((acc, curr) => acc + (curr.quantity || 0), 0);
+
+    return (
+      <div className="flex-grow bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 transition-colors duration-300">
+        {/* Sub-Header Tabs */}
+        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 backdrop-blur-sm sticky top-16 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-14">
+              <div className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none py-1">
+                {[
+                  { id: 'overview', label: 'Analytics', icon: LayoutDashboard },
+                  { id: 'users', label: 'User Management', icon: User },
+                  { id: 'listings', label: 'All Listings', icon: Utensils },
+                  { id: 'reports', label: 'System Reports', icon: FileSpreadsheet },
+                  { id: 'profile', label: 'Admin Profile', icon: User },
+                ].map(tab => {
+                  const TabIcon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as TabView)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                          : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40'
+                      }`}
+                    >
+                      <TabIcon className="h-4 w-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <AnimatePresence mode="wait">
+            
+            {/* Overview / Analytics tab */}
+            {activeTab === 'overview' && (
+              <motion.div
+                key="admin-analytics"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-8"
+              >
+                {/* Greeting Hero */}
+                <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/5 to-pink-500/10 border border-indigo-500/10 dark:border-indigo-500/5 rounded-3xl p-6 md:p-8">
+                  <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
+                    Administrator Command Console 🎛️
+                  </h2>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 max-w-2xl">
+                    EcoShare system health metrics, active listings, registration distributions, and live environmental rescue analytics.
+                  </p>
+                </div>
+
+                {/* Grid stats */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[
+                    { label: 'Total Listings Logged', value: totalListings, icon: FileSpreadsheet, color: 'text-zinc-500 bg-zinc-500/10' },
+                    { label: 'Active Food Listings', value: activeListings, icon: Clock, color: 'text-emerald-500 bg-emerald-500/10' },
+                    { label: 'Reserved / Claimed', value: reservedListings, icon: Compass, color: 'text-amber-500 bg-amber-500/10' },
+                    { label: 'Completed Pickups', value: collectedListings, icon: CheckCircle, color: 'text-sky-500 bg-sky-500/10' },
+                  ].map((stat, idx) => {
+                    const StatIcon = stat.icon;
+                    return (
+                      <div key={idx} className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm flex justify-between items-start">
+                        <div>
+                          <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{stat.label}</p>
+                          <h3 className="text-3xl font-extrabold mt-1 text-zinc-900 dark:text-zinc-50">{stat.value}</h3>
+                        </div>
+                        <div className={`p-2.5 rounded-xl ${stat.color}`}>
+                          <StatIcon className="h-5 w-5" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* User Distribution list */}
+                  <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mb-4">User Base Distribution</h3>
+                    <div className="space-y-4">
+                      {[
+                        { role: 'Admin', count: usersList.filter(u => u.role === 'Admin').length, color: 'bg-indigo-500' },
+                        { role: 'Kitchen Staff', count: usersList.filter(u => u.role === 'Kitchen Staff').length, color: 'bg-emerald-500' },
+                        { role: 'Student', count: usersList.filter(u => u.role === 'Student').length, color: 'bg-amber-500' },
+                        { role: 'NGO', count: usersList.filter(u => u.role === 'NGO').length, color: 'bg-sky-500' },
+                        { role: 'Volunteer', count: usersList.filter(u => u.role === 'Volunteer').length, color: 'bg-purple-500' },
+                      ].map((item, idx) => {
+                        const percent = usersList.length ? Math.round((item.count / usersList.length) * 100) : 0;
+                        return (
+                          <div key={idx} className="space-y-1.5">
+                            <div className="flex justify-between text-xs font-bold text-zinc-650 dark:text-zinc-350">
+                              <span>{item.role}</span>
+                              <span>{item.count} ({percent}%)</span>
+                            </div>
+                            <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                              <div className={`h-full ${item.color}`} style={{ width: `${percent}%` }}></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Impact analytics card */}
+                  <div className="lg:col-span-2 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="inline-flex items-center justify-center p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl mb-4">
+                        <Award className="h-6 w-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Global Environmental Rescue Impact</h3>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
+                        Administrating the EcoShare ecosystem helps reduce university and restaurant carbon footprints. Food waste diverted from landfills translates directly to reduced greenhouse emissions.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6 mt-6 grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">Rescued Weight Total</span>
+                        <h4 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">~{totalRescuedWeight} kg</h4>
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">Claim Rescue Rate</span>
+                        <h4 className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
+                          {totalListings ? Math.round(((reservedListings + collectedListings) / totalListings) * 100) : 0}%
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* User Management tab */}
+            {activeTab === 'users' && (
+              <motion.div
+                key="admin-users"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div>
+                  <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                    User Management Console
+                  </h2>
+                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-0.5">
+                    Search registered accounts, modify roles, or remove accounts from the directory.
+                  </p>
+                </div>
+
+                {/* Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm">
+                  {/* Search */}
+                  <div className="relative md:col-span-2">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
+                      <Search className="h-4.5 w-4.5" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search users by name or email..."
+                      value={adminUserSearch}
+                      onChange={e => setAdminUserSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {/* Role filter */}
+                  <div>
+                    <select
+                      value={adminUserRoleFilter}
+                      onChange={e => setAdminUserRoleFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                    >
+                      <option value="All">All Roles</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Kitchen Staff">Kitchen Staff</option>
+                      <option value="Student">Student</option>
+                      <option value="NGO">NGO</option>
+                      <option value="Volunteer">Volunteer</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Users List Table */}
+                {loadingUsers && usersList.length === 0 ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map(n => (
+                      <div key={n} className="h-16 bg-white dark:bg-zinc-900 animate-pulse border border-zinc-200 dark:border-zinc-800 rounded-xl" />
+                    ))}
+                  </div>
+                ) : adminFilteredUsers.length === 0 ? (
+                  <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-16 text-center bg-white dark:bg-zinc-900/40">
+                    <User className="h-12 w-12 text-zinc-400 mx-auto mb-4" />
+                    <h4 className="font-bold text-zinc-900 dark:text-zinc-50">No users match filters</h4>
+                  </div>
+                ) : (
+                  <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-zinc-50 dark:bg-zinc-800/40 text-xs text-zinc-450 dark:text-zinc-500 uppercase font-semibold">
+                          <tr>
+                            <th className="p-4">Name</th>
+                            <th className="p-4">Email</th>
+                            <th className="p-4">Member Since</th>
+                            <th className="p-4">Role Authorization</th>
+                            <th className="p-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                          {adminFilteredUsers.map(usr => (
+                            <tr key={usr._id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/25 transition-colors">
+                              <td className="p-4 font-bold text-zinc-900 dark:text-zinc-50">
+                                {usr.name}
+                              </td>
+                              <td className="p-4 text-xs text-zinc-500 font-mono">{usr.email}</td>
+                              <td className="p-4 text-xs text-zinc-455">{new Date(usr.createdAt).toLocaleDateString()}</td>
+                              <td className="p-4">
+                                <select
+                                  value={usr.role}
+                                  onChange={e => handleUpdateUserRole(usr._id, e.target.value)}
+                                  disabled={usr._id === user._id}
+                                  className="px-2.5 py-1 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer disabled:opacity-50"
+                                >
+                                  <option value="Student">Student</option>
+                                  <option value="Kitchen Staff">Kitchen Staff</option>
+                                  <option value="NGO">NGO</option>
+                                  <option value="Volunteer">Volunteer</option>
+                                  <option value="Admin">Admin</option>
+                                </select>
+                              </td>
+                              <td className="p-4 text-right">
+                                <button
+                                  onClick={() => setAdminConfirmDeleteUserId(usr._id)}
+                                  disabled={usr._id === user._id}
+                                  className="p-1.5 border border-zinc-200 dark:border-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 rounded-lg cursor-pointer disabled:opacity-30"
+                                  title="Delete User"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Food Listings Management tab */}
+            {activeTab === 'listings' && (
+              <motion.div
+                key="admin-listings"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div>
+                  <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                    Food Listings Directory
+                  </h2>
+                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-0.5">
+                    Overview of all posted surplus meals in the network. Delete expired or improper listings.
+                  </p>
+                </div>
+
+                {/* Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm">
+                  {/* Search */}
+                  <div className="relative md:col-span-2">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
+                      <Search className="h-4.5 w-4.5" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search food by title..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {/* Status filter */}
+                  <div>
+                    <select
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="Available">Available</option>
+                      <option value="Reserved">Reserved</option>
+                      <option value="Collected">Collected</option>
+                      <option value="Expired">Expired</option>
+                    </select>
+                  </div>
+
+                  {/* Sort */}
+                  <div>
+                    <select
+                      value={sortBy}
+                      onChange={e => setSortBy(e.target.value)}
+                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="quantity-desc">Quantity: High to Low</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Listings table view */}
+                {loadingSystemListings && systemListings.length === 0 ? (
+                  <div className="space-y-4">
+                    {[1, 2].map(n => (
+                      <div key={n} className="h-16 bg-white dark:bg-zinc-900 animate-pulse border border-zinc-200 dark:border-zinc-800 rounded-xl" />
+                    ))}
+                  </div>
+                ) : adminFilteredListings.length === 0 ? (
+                  <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-16 text-center bg-white dark:bg-zinc-900/40">
+                    <Utensils className="h-12 w-12 text-zinc-455 mx-auto mb-4" />
+                    <h4 className="font-bold text-zinc-900 dark:text-zinc-50">No listings found</h4>
+                  </div>
+                ) : (
+                  <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-zinc-50 dark:bg-zinc-800/40 text-xs text-zinc-450 dark:text-zinc-500 uppercase font-semibold">
+                          <tr>
+                            <th className="p-4">Listing Title</th>
+                            <th className="p-4">Category</th>
+                            <th className="p-4">Quantity</th>
+                            <th className="p-4">Location</th>
+                            <th className="p-4">Owner / Restaurant</th>
+                            <th className="p-4">Status</th>
+                            <th className="p-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                          {adminFilteredListings.map(item => (
+                            <tr key={item._id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/25 transition-colors">
+                              <td className="p-4 font-bold text-zinc-900 dark:text-zinc-50">
+                                {item.title}
+                              </td>
+                              <td className="p-4 text-xs text-zinc-500">{item.category}</td>
+                              <td className="p-4 font-semibold text-zinc-700 dark:text-zinc-350">{item.quantity} {item.unit}</td>
+                              <td className="p-4 text-xs text-zinc-550 max-w-xs truncate">{item.pickupLocation}</td>
+                              <td className="p-4 text-xs text-zinc-650 dark:text-zinc-400 font-semibold">{item.createdBy?.name || 'Restaurant'}</td>
+                              <td className="p-4">
+                                <span className={`px-2 py-0.5 border rounded-full text-[9px] font-bold uppercase tracking-wider ${getStatusColor(item.status)}`}>
+                                  {item.status}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right">
+                                <button
+                                  onClick={() => handleAdminDeleteListing(item._id)}
+                                  className="p-1.5 border border-zinc-200 dark:border-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 rounded-lg cursor-pointer"
+                                  title="Delete Listing"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Reports Page tab */}
+            {activeTab === 'reports' && (
+              <motion.div
+                key="admin-reports"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                      System Audit Reports
+                    </h2>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-0.5">
+                      Generate and export operational system logs of surplus distributions.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => toast('success', 'Operational log exported as CSV successfully!')}
+                      className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-100 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-xl cursor-pointer"
+                    >
+                      Export CSV
+                    </button>
+                    <button
+                      onClick={() => toast('success', 'Operational log exported as PDF successfully!')}
+                      className="px-4 py-2 bg-zinc-900 dark:bg-zinc-150 dark:text-zinc-900 hover:bg-zinc-850 text-white text-xs font-bold rounded-xl cursor-pointer"
+                    >
+                      Export PDF
+                    </button>
+                  </div>
+                </div>
+
+                {/* Audit Grid list */}
+                <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-zinc-50 dark:bg-zinc-800/40 text-xs text-zinc-450 dark:text-zinc-500 uppercase font-semibold">
+                        <tr>
+                          <th className="p-4">Report Code</th>
+                          <th className="p-4">Description</th>
+                          <th className="p-4">Total Weight Saved</th>
+                          <th className="p-4">Completed Items</th>
+                          <th className="p-4">Claims Active</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {[
+                          { code: 'RPT-MEALS-01', desc: 'Cooked Surplus Redistribution Report', weight: `${systemListings.filter(l => l.category === 'Cooked Meals' && l.status === 'Collected').reduce((acc, curr) => acc + curr.quantity, 0)} kg`, completed: systemListings.filter(l => l.category === 'Cooked Meals' && l.status === 'Collected').length, active: systemListings.filter(l => l.category === 'Cooked Meals' && l.status === 'Reserved').length },
+                          { code: 'RPT-GROC-02', desc: 'Raw & Grocery Redistribution Report', weight: `${systemListings.filter(l => (l.category === 'Groceries' || l.category === 'Raw Ingredients') && l.status === 'Collected').reduce((acc, curr) => acc + curr.quantity, 0)} kg`, completed: systemListings.filter(l => (l.category === 'Groceries' || l.category === 'Raw Ingredients') && l.status === 'Collected').length, active: systemListings.filter(l => (l.category === 'Groceries' || l.category === 'Raw Ingredients') && l.status === 'Reserved').length },
+                          { code: 'RPT-OTH-03', desc: 'Others & Baked Goods Audit Logs', weight: `${systemListings.filter(l => (l.category === 'Baked Goods' || l.category === 'Others') && l.status === 'Collected').reduce((acc, curr) => acc + curr.quantity, 0)} kg`, completed: systemListings.filter(l => (l.category === 'Baked Goods' || l.category === 'Others') && l.status === 'Collected').length, active: systemListings.filter(l => (l.category === 'Baked Goods' || l.category === 'Others') && l.status === 'Reserved').length },
+                        ].map((rpt, i) => (
+                          <tr key={i} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/25 transition-colors">
+                            <td className="p-4 font-bold text-zinc-900 dark:text-zinc-50 font-mono text-xs">{rpt.code}</td>
+                            <td className="p-4 text-xs font-semibold text-zinc-650 dark:text-zinc-300">{rpt.desc}</td>
+                            <td className="p-4 font-bold text-emerald-600 dark:text-emerald-400">{rpt.weight}</td>
+                            <td className="p-4 text-zinc-700 dark:text-zinc-300 font-medium">{rpt.completed} completed</td>
+                            <td className="p-4 text-zinc-700 dark:text-zinc-300 font-medium">{rpt.active} active</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Admin Profile tab */}
+            {activeTab === 'profile' && (
+              <motion.div
+                key="admin-profile"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="max-w-2xl mx-auto border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden"
+              >
+                {/* Banner */}
+                <div className="h-32 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-500 relative flex items-end p-6">
+                  <div className="absolute bottom-[-32px] left-6 h-20 w-20 rounded-full bg-white dark:bg-zinc-900 border-4 border-white dark:border-zinc-900 shadow-md flex items-center justify-center font-extrabold text-3xl text-zinc-700 dark:text-zinc-300">
+                    {user?.name?.[0]?.toUpperCase() || ''}
+                  </div>
+                </div>
+
+                <div className="pt-12 p-6 space-y-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">{user?.name}</h2>
+                    <span className="inline-block px-2 py-0.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1.5">
+                      {user?.role} Command Authorization
+                    </span>
+                  </div>
+
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5 space-y-4">
+                    <div className="grid grid-cols-3 text-sm">
+                      <span className="text-zinc-400 font-medium">Email Address</span>
+                      <span className="col-span-2 text-zinc-800 dark:text-zinc-200 font-semibold">{user?.email}</span>
+                    </div>
+                    <div className="grid grid-cols-3 text-sm">
+                      <span className="text-zinc-400 font-medium">Admin Joined</span>
+                      <span className="col-span-2 text-zinc-800 dark:text-zinc-200 font-semibold font-mono">
+                        {new Date(user?.createdAt || Date.now()).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 text-sm">
+                      <span className="text-zinc-400 font-medium">System Status</span>
+                      <span className="col-span-2 text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                        Active Live System
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6 flex justify-between items-center">
+                    <button
+                      onClick={logout}
+                      className="px-4 py-2 border border-zinc-250 dark:border-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 text-sm font-semibold rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <LogOut className="h-4.5 w-4.5" />
+                      Sign Out Admin Account
+                    </button>
+                    <p className="text-[11px] text-zinc-400 font-medium">EcoShare V1.0.0 Command Console</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+
+        {/* User Account Deletion Confirmation Overlay */}
+        <AnimatePresence>
+          {adminConfirmDeleteUserId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 max-w-sm w-full p-6 rounded-2xl shadow-2xl text-center space-y-4"
+              >
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-500">
+                  <ShieldAlert className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Delete User Account?</h3>
+                  <p className="text-xs text-zinc-505 dark:text-zinc-400 mt-1.5 leading-relaxed">
+                    Are you sure you want to delete this user? Their account and records will be deleted immediately. This cannot be undone.
+                  </p>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setAdminConfirmDeleteUserId(null)}
+                    className="flex-1 px-4 py-2 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-semibold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDeleteUser(adminConfirmDeleteUserId)}
+                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl cursor-pointer"
+                  >
+                    Delete User
                   </button>
                 </div>
               </motion.div>
