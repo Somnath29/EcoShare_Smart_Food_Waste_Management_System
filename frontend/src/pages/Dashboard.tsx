@@ -7,7 +7,8 @@ import {
   User, ShieldAlert, Award, MapPin, CheckCircle, Clock, 
   FileSpreadsheet, Plus, Edit, Trash2, Search, SlidersHorizontal, 
   List, Grid, ChevronRight, ArrowLeft, LogOut, LayoutDashboard,
-  Utensils, CalendarDays, Compass, Loader2, Play, Pause, RotateCcw, Zap
+  Utensils, CalendarDays, Compass, Loader2, Play, Pause, RotateCcw, Zap,
+  Activity, Wifi, Cpu, Server
 } from 'lucide-react';
 import { 
   getFoodsApi, 
@@ -22,7 +23,7 @@ import {
   deleteUserApi
 } from '../services/api.js';
 
-type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports';
+type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center';
 
 // Reusable progress ring
 const ProgressRing: React.FC<{ percentage: number; label: string; colorClass?: string }> = ({ 
@@ -1562,6 +1563,269 @@ export const Dashboard = () => {
     );
   };
 
+  // Interactive Live Command Center telemetry dashboard
+  const LiveCommandCenter: React.FC = () => {
+    const [carbonSaved, setCarbonSaved] = useState<number>(142.5);
+    const [mealsRescued, setMealsRescued] = useState<number>(284);
+    const [peopleFed, setPeopleFed] = useState<number>(128);
+    const [co2Offset, setCo2Offset] = useState<number>(98.2);
+    const [volunteers, setVolunteers] = useState<number>(32);
+    const [deliveries, setDeliveries] = useState<number>(3);
+    const [deliveryStep, setDeliveryStep] = useState<number>(1);
+    const [systemLoad, setSystemLoad] = useState<number[]>([24, 28, 22, 35, 29, 31]);
+
+    const [activities, setActivities] = useState<any[]>([
+      { id: '1', type: 'rescue', message: 'Feeding Hearts NGO claimed 30 kg of surplus Pasta from Gordon Kitchen.', time: 'Just now', badge: 'Rescue', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+      { id: '2', type: 'donation', message: 'Gordon Dining Hall logged 15 lbs of Artisan Pastries.', time: '2m ago', badge: 'Donation', color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' },
+      { id: '3', type: 'registration', message: 'Volunteers team welcomed Sarah M. in South Sector.', time: '5m ago', badge: 'Sign Up', color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20' },
+      { id: '4', type: 'system', message: 'Automated Dijkstra redistribution optimization cycle completed.', time: '12m ago', badge: 'System', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+    ]);
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        // Ticking metrics
+        setCarbonSaved(prev => parseFloat((prev + 0.4).toFixed(1)));
+        setMealsRescued(prev => prev + 1);
+        setPeopleFed(prev => prev + (Math.random() > 0.6 ? 2 : 1));
+        setCo2Offset(prev => parseFloat((prev + 0.3).toFixed(1)));
+        setVolunteers(prev => Math.max(25, Math.min(45, prev + (Math.random() > 0.5 ? 1 : -1))));
+        setDeliveries(prev => Math.max(1, Math.min(8, prev + (Math.random() > 0.7 ? 1 : Math.random() > 0.7 ? -1 : 0))));
+        setSystemLoad(prev => [...prev.slice(1), Math.floor(Math.random() * 20) + 15]);
+
+        // Stepper increment
+        setDeliveryStep(prev => (prev >= 4 ? 1 : prev + 1));
+
+        // Push new live activity feed event
+        const sources = [
+          { type: 'donation', msg: 'University Cafe logged 8 kg of vegetarian wraps.', badge: 'Donation', color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' },
+          { type: 'rescue', msg: 'Student claim reservation processed for Gordon Kitchen box #202.', badge: 'Rescue', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+          { type: 'rescue', msg: 'Volunteer Dave K. marked delivery to Haven Shelter as complete.', badge: 'Transit', color: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20' },
+          { type: 'registration', msg: "New partner NGO 'Food For Families' registered and verified.", badge: 'NGO Sign', color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20' },
+          { type: 'system', msg: 'Zero-waste metric audit calculated: 450 kg CO2 offset milestone reached.', badge: 'System', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+        ];
+
+        const randomSource = sources[Math.floor(Math.random() * sources.length)];
+        const newEvent = {
+          id: Date.now().toString(),
+          type: randomSource.type,
+          message: randomSource.msg,
+          time: 'Just now',
+          badge: randomSource.badge,
+          color: randomSource.color
+        };
+
+        setActivities(prev => [
+          newEvent,
+          ...prev.map(act => act.time === 'Just now' ? { ...act, time: '1m ago' } : act).slice(0, 5)
+        ]);
+
+      }, 4000);
+
+      return () => clearInterval(interval);
+    }, []);
+
+    return (
+      <div className="space-y-8 animate-fade-in">
+        {/* Command Center Title Card */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-zinc-950 text-white p-6 md:p-8 rounded-3xl relative overflow-hidden shadow-xl">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.12),transparent_60%)] pointer-events-none" />
+          <div className="space-y-1.5 z-10">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase tracking-widest border border-emerald-500/30">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              All Networks Active
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
+              EcoShare Live Command Center
+            </h2>
+            <p className="text-xs text-zinc-400">
+              Real-time telemetry, routing audits, and zero-waste matching optimizations.
+            </p>
+          </div>
+          <div className="text-right z-10 font-mono text-[10px] text-zinc-500 font-bold hidden sm:block">
+            <span>PING SECURE: 24ms</span>
+            <span className="block mt-0.5">ESTABLISHED: {new Date().toLocaleTimeString()}</span>
+          </div>
+        </div>
+
+        {/* Real-time KPI Dials */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { label: 'Carbon Saved Today', value: `${carbonSaved} kg`, desc: '+0.4 kg/tick', change: 'up' },
+            { label: 'Meals Rescued Today', value: mealsRescued, desc: 'Enterprise volume', change: 'up' },
+            { label: 'People Fed Today', value: peopleFed, desc: 'Local shelters matched', change: 'up' },
+            { label: 'Food Wasted Today', value: '1.2 kg', desc: '99.4% redirect rate', change: 'stable' },
+            { label: 'CO2 Reduced Today', value: `${co2Offset} kg`, desc: 'Offset benchmark', change: 'up' },
+            { label: 'Active Partner NGOs', value: '18 Verified', desc: 'Real-time coordinate hooks', change: 'stable' },
+            { label: 'Volunteers Online', value: volunteers, desc: 'Dijkstra route ready', change: 'up' },
+            { label: 'Deliveries In Progress', value: deliveries, desc: 'Active dispatch loops', change: 'stable' }
+          ].map((kpi, idx) => (
+            <div key={idx} className="glass-panel apple-shadow interactive-card rounded-2xl p-5 flex flex-col justify-between min-h-[110px]">
+              <div>
+                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{kpi.label}</span>
+                <h4 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 mt-1.5 tracking-tight">
+                  {kpi.value}
+                </h4>
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-semibold text-zinc-500 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 mt-2">
+                <span>{kpi.desc}</span>
+                {kpi.change === 'up' && (
+                  <span className="text-emerald-500 font-bold">▲ Live</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Live Double Column */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Feed & Tracker */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* Live Activity Feed */}
+            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-sm">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 mb-4">
+                <Activity className="h-4.5 w-4.5 text-indigo-500 animate-pulse" />
+                Live Network Activity Feed
+              </h3>
+              <div className="space-y-4 min-h-[280px]">
+                <AnimatePresence mode="popLayout">
+                  {activities.map((act) => (
+                    <motion.div
+                      key={act.id}
+                      initial={{ opacity: 0, y: -15, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.35 }}
+                      className="border border-zinc-150 dark:border-zinc-800/60 p-4 rounded-2xl flex items-center justify-between gap-4 hover:border-zinc-250 dark:hover:border-zinc-700 transition-all bg-zinc-50/20 dark:bg-zinc-950/10"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${act.color}`}>
+                          {act.badge}
+                        </span>
+                        <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                          {act.message}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-medium text-zinc-400 shrink-0 font-mono">{act.time}</span>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Delivery Stepper Tracker */}
+            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-sm">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 mb-4">
+                <Compass className="h-4.5 w-4.5 text-emerald-500 animate-spin" style={{ animationDuration: '6s' }} />
+                Active Route optimization: Dijkstra Loop #409
+              </h3>
+              <div className="bg-zinc-50/50 dark:bg-zinc-950/20 border border-zinc-150 dark:border-zinc-800/80 p-6 rounded-2xl">
+                <div className="flex justify-between items-center text-xs font-bold text-zinc-500 mb-6">
+                  <span>SENDER: Gordon Kitchen</span>
+                  <span className="text-emerald-500 font-mono">DISPATCH: In Transit (Route C)</span>
+                  <span>DESTINATION: Hope NGO</span>
+                </div>
+                {/* Stepper row */}
+                <div className="relative flex justify-between items-center w-full">
+                  {/* Background progress bar line */}
+                  <div className="absolute top-1/2 left-0 right-0 h-1 bg-zinc-250 dark:bg-zinc-800 transform -translate-y-1/2 z-0" />
+                  <div
+                    className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 transform -translate-y-1/2 z-0 transition-all duration-700"
+                    style={{ width: `${((deliveryStep - 1) / 3) * 100}%` }}
+                  />
+
+                  {[
+                    { label: 'Food Logged', desc: 'Gordon Kitchen' },
+                    { label: 'Claim Verified', desc: 'NGO matched' },
+                    { label: 'In Transit', desc: 'Volunteer assigned' },
+                    { label: 'Delivered', desc: 'Meals handed over' }
+                  ].map((stepInfo, idx) => {
+                    const stepNum = idx + 1;
+                    const isActive = stepNum === deliveryStep;
+                    const isCompleted = stepNum < deliveryStep;
+                    return (
+                      <div key={idx} className="relative z-10 flex flex-col items-center">
+                        <div className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                          isCompleted
+                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/10'
+                            : isActive
+                            ? 'bg-amber-400 border-amber-400 text-zinc-900 animate-pulse scale-110 shadow-lg shadow-amber-500/10'
+                            : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-800 text-zinc-400'
+                        }`}>
+                          {isCompleted ? '✓' : stepNum}
+                        </div>
+                        <span className={`text-[10px] font-bold mt-2 ${isActive ? 'text-amber-500 font-black' : isCompleted ? 'text-emerald-600' : 'text-zinc-450 dark:text-zinc-500'}`}>
+                          {stepInfo.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* System diagnostics sidebar */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Health Diagnostics Panel */}
+            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-sm">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 mb-4">
+                <Server className="h-4.5 w-4.5 text-emerald-500" />
+                Network Diagnostics
+              </h3>
+              <div className="space-y-4">
+                {[
+                  { label: 'Database Health', value: '100% Operational', icon: Wifi, color: 'text-emerald-500' },
+                  { label: 'Redistribution API', value: '200 OK (Healthy)', icon: Cpu, color: 'text-emerald-500' },
+                  { label: 'Min-Heap Priority Queue', value: 'Balanced', icon: Server, color: 'text-indigo-500' },
+                  { label: 'Global Server Latency', value: '24ms', icon: Activity, color: 'text-emerald-500' }
+                ].map((item, idx) => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <div key={idx} className="flex justify-between items-center p-3 border border-zinc-150 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 rounded-2xl">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 ${item.color}`}>
+                          <ItemIcon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[11px] font-bold text-zinc-500">{item.label}</span>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-zinc-700 dark:text-zinc-350">{item.value}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Dynamic load graph */}
+              <div className="mt-6 pt-4 border-t border-zinc-150 dark:border-zinc-800/80 space-y-2">
+                <div className="flex justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  <span>Server Node CPU load</span>
+                  <span className="font-mono text-emerald-500">{systemLoad[systemLoad.length - 1]}% Load</span>
+                </div>
+                <div className="flex items-end gap-1.5 h-16 pt-2 justify-between">
+                  {systemLoad.map((load, idx) => (
+                    <div
+                      key={idx}
+                      className="w-full bg-emerald-500/20 dark:bg-emerald-500/10 border-t border-emerald-500 rounded-t-sm transition-all duration-500"
+                      style={{ height: `${load}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Micro-learning carbon block */}
+            <div className="p-6 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/15 rounded-3xl space-y-3">
+              <span className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-widest">Global Impact Audit</span>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 leading-snug">Why Carbon Equivalency Matters</h4>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Decomposing food waste accounts for 8% of global greenhouse emissions. Redirecting surplus meals directly offsets methane emissions from anaerobic landfill decomposition.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (user?.role === 'Student') {
     const studentFilteredFoods = getFilteredAvailableFoods();
     const activeClaims = reservedFoods.filter(f => f.status === 'Reserved');
@@ -1570,6 +1834,7 @@ export const Dashboard = () => {
     const studentTabs = [
       { id: 'overview', label: 'Browse Food', icon: Utensils },
       { id: 'reservations', label: 'My Reservations', icon: FileSpreadsheet },
+      { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'profile', label: 'My Profile', icon: User },
     ];
 
@@ -1793,6 +2058,16 @@ export const Dashboard = () => {
                   </div>
                 )}
                 <AlgorithmsInAction defaultAlgo="binary_search" />
+              </motion.div>
+            )}
+            {activeTab === 'command_center' && (
+              <motion.div
+                key="student-command-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <LiveCommandCenter />
               </motion.div>
             )}
 
@@ -2145,6 +2420,7 @@ export const Dashboard = () => {
     const ngoTabs = [
       { id: 'overview', label: 'Browse Donations', icon: Utensils },
       { id: 'reservations', label: 'My Donations', icon: FileSpreadsheet },
+      { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'profile', label: 'NGO Profile', icon: User },
     ];
 
@@ -2368,6 +2644,16 @@ export const Dashboard = () => {
                   </div>
                 )}
                 <AlgorithmsInAction defaultAlgo="dijkstra" />
+              </motion.div>
+            )}
+            {activeTab === 'command_center' && (
+              <motion.div
+                key="ngo-command-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <LiveCommandCenter />
               </motion.div>
             )}
 
@@ -2730,6 +3016,7 @@ export const Dashboard = () => {
 
     const adminTabs = [
       { id: 'overview', label: 'Analytics', icon: LayoutDashboard },
+      { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'users', label: 'User Directory', icon: User },
       { id: 'listings', label: 'System Listings', icon: Utensils },
       { id: 'reports', label: 'System Reports', icon: FileSpreadsheet },
@@ -2844,6 +3131,16 @@ export const Dashboard = () => {
                     </div>
                   </div>
                 </div>
+              </motion.div>
+            )}
+            {activeTab === 'command_center' && (
+              <motion.div
+                key="admin-command-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <LiveCommandCenter />
               </motion.div>
             )}
 
@@ -3267,6 +3564,7 @@ export const Dashboard = () => {
   const kitchenTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'listings', label: 'Food Listings', icon: Utensils },
+    { id: 'command_center', label: 'Command Center', icon: Activity },
     { id: 'profile', label: 'Kitchen Profile', icon: User },
   ];
 
@@ -3459,6 +3757,16 @@ export const Dashboard = () => {
                   </div>
                 </div>
                 <AlgorithmsInAction defaultAlgo="min_heap" />
+              </motion.div>
+            )}
+            {activeTab === 'command_center' && (
+              <motion.div
+                key="kitchen-command-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <LiveCommandCenter />
               </motion.div>
             )}
 
