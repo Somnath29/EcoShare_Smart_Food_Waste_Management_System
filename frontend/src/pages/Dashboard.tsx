@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.js';
 import { useToast } from '../components/ui/Toast.js';
+import { useTheme } from '../context/ThemeContext.js';
 import { Skeleton, CardSkeleton } from '../components/ui/Skeleton.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import L from 'leaflet';
 import { 
   User, ShieldAlert, Award, MapPin, CheckCircle, Clock, 
   FileSpreadsheet, Plus, Edit, Trash2, Search, SlidersHorizontal, 
@@ -23,7 +25,7 @@ import {
   deleteUserApi
 } from '../services/api.js';
 
-type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center';
+type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center' | 'transit_map';
 
 // Reusable progress ring
 const ProgressRing: React.FC<{ percentage: number; label: string; colorClass?: string }> = ({ 
@@ -1826,6 +1828,195 @@ export const Dashboard = () => {
     );
   };
 
+  // Redistribution Map View using Leaflet
+  const RedistributionMap: React.FC = () => {
+    const { theme } = useTheme();
+    const mapContainerRef = useRef<HTMLDivElement>(null);
+    const mapInstanceRef = useRef<L.Map | null>(null);
+    const tileLayerRef = useRef<L.TileLayer | null>(null);
+    const volunteerMarkerRef = useRef<L.Marker | null>(null);
+    const [coordIndex, setCoordIndex] = useState<number>(0);
+    const [eta, setEta] = useState<number>(8); // minutes remaining
+
+    const routeCoordinates = [
+      [43.0715, -89.3980],
+      [43.0715, -89.3950],
+      [43.0740, -89.3950],
+      [43.0740, -89.3910],
+      [43.0760, -89.3900]
+    ];
+
+    const locations = [
+      { name: 'Gordon Kitchen', type: 'Restaurant', coords: [43.0715, -89.3980], icon: '🍳', color: 'bg-indigo-500 text-white' },
+      { name: 'Central Campus Hub', type: 'College', coords: [43.0750, -89.4020], icon: '🎓', color: 'bg-emerald-500 text-white' },
+      { name: 'South Dorms', type: 'College', coords: [43.0690, -89.4050], icon: '🎓', color: 'bg-emerald-500 text-white' },
+      { name: 'Feeding Hearts Shelter', type: 'NGO', coords: [43.0760, -89.3900], icon: '❤️', color: 'bg-rose-500 text-white animate-pulse' },
+      { name: 'Hope Food Foundation', type: 'NGO', coords: [43.0820, -89.4100], icon: '❤️', color: 'bg-rose-500 text-white' },
+      { name: 'Second Harvest Bank', type: 'Food Bank', coords: [43.0650, -89.3920], icon: '🏦', color: 'bg-amber-500 text-white' }
+    ];
+
+    // Tick the moving volunteer marker position
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setCoordIndex((prev) => {
+          const next = prev >= routeCoordinates.length - 1 ? 0 : prev + 1;
+          // decrease ETA as route progresses
+          setEta(Math.max(1, 8 - Math.round((next / (routeCoordinates.length - 1)) * 7)));
+          return next;
+        });
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }, []);
+
+    // Instantiate Map
+    useEffect(() => {
+      if (!mapContainerRef.current) return;
+      if (mapInstanceRef.current) return;
+
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: false
+      }).setView([43.0731, -89.4012], 14);
+      mapInstanceRef.current = map;
+
+      // Zoom control bottom-right
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      // Setup custom marker icons
+      const createHtmlIcon = (colorClass: string, iconHtml: string) => {
+        return L.divIcon({
+          className: 'custom-map-icon',
+          html: `<div class="p-2 rounded-full border-2 border-white dark:border-zinc-950 shadow-md flex items-center justify-center ${colorClass}" style="width: 34px; height: 34px; font-size: 14px;">${iconHtml}</div>`,
+          iconSize: [34, 34],
+          iconAnchor: [17, 17]
+        });
+      };
+
+      // Add static landmarks
+      locations.forEach((loc) => {
+        L.marker(loc.coords as L.LatLngExpression, {
+          icon: createHtmlIcon(loc.color, loc.icon)
+        })
+        .bindPopup(`<strong>${loc.name}</strong><br/>Type: ${loc.type}`)
+        .addTo(map);
+      });
+
+      // Add shortest route path line
+      L.polyline(routeCoordinates as L.LatLngExpression[], {
+        color: '#10b981',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '5, 8'
+      }).addTo(map);
+
+      // Add volunteer bike marker
+      const startCoord = routeCoordinates[0];
+      const bikeIcon = L.divIcon({
+        className: 'custom-bike-icon',
+        html: `<div class="p-2 rounded-full border-2 border-white dark:border-zinc-950 bg-sky-500 text-white shadow-xl flex items-center justify-center scale-110 animate-bounce" style="width: 36px; height: 36px; font-size: 16px;">🚲</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      const volunteerMarker = L.marker(startCoord as L.LatLngExpression, { icon: bikeIcon })
+        .bindPopup("<strong>Volunteer Dispatch</strong><br/>Rider: Alice S.<br/>Transit: MERN box #202")
+        .addTo(map);
+      volunteerMarkerRef.current = volunteerMarker;
+
+      return () => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+        }
+      };
+    }, []);
+
+    // Theme tile layer updates
+    useEffect(() => {
+      if (!mapInstanceRef.current) return;
+      if (tileLayerRef.current) {
+        tileLayerRef.current.remove();
+      }
+
+      const tileUrl = theme === 'dark'
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+      const tileLayer = L.tileLayer(tileUrl, {
+        attribution: '&copy; CartoDB'
+      }).addTo(mapInstanceRef.current);
+      tileLayerRef.current = tileLayer;
+    }, [theme]);
+
+    // Update volunteer position on coordinate tick
+    useEffect(() => {
+      if (!volunteerMarkerRef.current) return;
+      const currentCoord = routeCoordinates[coordIndex];
+      volunteerMarkerRef.current.setLatLng(currentCoord as L.LatLngExpression);
+    }, [coordIndex]);
+
+    return (
+      <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-12">
+          {/* Map Viewer */}
+          <div className="lg:col-span-8 h-[450px] relative z-10" ref={mapContainerRef} />
+
+          {/* Uber Eats Side Panel */}
+          <div className="lg:col-span-4 p-6 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-zinc-250 dark:border-zinc-800 bg-zinc-50/20 dark:bg-zinc-950/10">
+            <div className="space-y-6">
+              <div>
+                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                  Live Dispatch Route
+                </span>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mt-1">Dijkstra Shortest Path</h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-450 mt-0.5">Eco-friendly transit routing calculations in real-time.</p>
+              </div>
+
+              {/* Order Info */}
+              <div className="space-y-4">
+                <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-sm shrink-0">
+                    {eta}
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-wide">ESTIMATED ARRIVAL</span>
+                    <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100">{eta} minutes remaining</h4>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3">
+                  <div className="flex justify-between text-xs font-semibold text-zinc-500">
+                    <span>Total Distance</span>
+                    <span className="text-zinc-800 dark:text-zinc-200">1.8 miles</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-semibold text-zinc-500">
+                    <span>Avg Transit Time</span>
+                    <span className="text-zinc-800 dark:text-zinc-200">8 minutes</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-semibold text-zinc-500">
+                    <span>Assigned Dispatch</span>
+                    <span className="text-sky-500 font-bold">Alice S. (Rider)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Steps Timeline info */}
+            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-6 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-indigo-500 animate-ping"></span>
+                <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest">Active Dispatch Log</span>
+              </div>
+              <p className="text-xs text-zinc-650 dark:text-zinc-350 leading-relaxed font-semibold">
+                Rider currently navigating intersection of University Avenue. Dijkstra route optimization successfully refreshed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (user?.role === 'Student') {
     const studentFilteredFoods = getFilteredAvailableFoods();
     const activeClaims = reservedFoods.filter(f => f.status === 'Reserved');
@@ -1835,6 +2026,7 @@ export const Dashboard = () => {
       { id: 'overview', label: 'Browse Food', icon: Utensils },
       { id: 'reservations', label: 'My Reservations', icon: FileSpreadsheet },
       { id: 'command_center', label: 'Command Center', icon: Activity },
+      { id: 'transit_map', label: 'Transit Map', icon: Compass },
       { id: 'profile', label: 'My Profile', icon: User },
     ];
 
@@ -2068,6 +2260,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <LiveCommandCenter />
+              </motion.div>
+            )}
+            {activeTab === 'transit_map' && (
+              <motion.div
+                key="student-transit-map"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <RedistributionMap />
               </motion.div>
             )}
 
@@ -2421,6 +2623,7 @@ export const Dashboard = () => {
       { id: 'overview', label: 'Browse Donations', icon: Utensils },
       { id: 'reservations', label: 'My Donations', icon: FileSpreadsheet },
       { id: 'command_center', label: 'Command Center', icon: Activity },
+      { id: 'transit_map', label: 'Transit Map', icon: Compass },
       { id: 'profile', label: 'NGO Profile', icon: User },
     ];
 
@@ -2654,6 +2857,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <LiveCommandCenter />
+              </motion.div>
+            )}
+            {activeTab === 'transit_map' && (
+              <motion.div
+                key="ngo-transit-map"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <RedistributionMap />
               </motion.div>
             )}
 
@@ -3017,6 +3230,7 @@ export const Dashboard = () => {
     const adminTabs = [
       { id: 'overview', label: 'Analytics', icon: LayoutDashboard },
       { id: 'command_center', label: 'Command Center', icon: Activity },
+      { id: 'transit_map', label: 'Transit Map', icon: Compass },
       { id: 'users', label: 'User Directory', icon: User },
       { id: 'listings', label: 'System Listings', icon: Utensils },
       { id: 'reports', label: 'System Reports', icon: FileSpreadsheet },
@@ -3141,6 +3355,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <LiveCommandCenter />
+              </motion.div>
+            )}
+            {activeTab === 'transit_map' && (
+              <motion.div
+                key="admin-transit-map"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <RedistributionMap />
               </motion.div>
             )}
 
@@ -3565,6 +3789,7 @@ export const Dashboard = () => {
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'listings', label: 'Food Listings', icon: Utensils },
     { id: 'command_center', label: 'Command Center', icon: Activity },
+    { id: 'transit_map', label: 'Transit Map', icon: Compass },
     { id: 'profile', label: 'Kitchen Profile', icon: User },
   ];
 
@@ -3767,6 +3992,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <LiveCommandCenter />
+              </motion.div>
+            )}
+            {activeTab === 'transit_map' && (
+              <motion.div
+                key="kitchen-transit-map"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <RedistributionMap />
               </motion.div>
             )}
 
