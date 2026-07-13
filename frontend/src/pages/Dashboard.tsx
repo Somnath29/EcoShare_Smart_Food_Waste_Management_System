@@ -5,6 +5,16 @@ import { useTheme } from '../context/ThemeContext.js';
 import { Skeleton, CardSkeleton } from '../components/ui/Skeleton.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import L from 'leaflet';
+import {
+  ResponsiveContainer,
+  AreaChart, Area,
+  LineChart, Line,
+  BarChart, Bar,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  PieChart, Pie, Cell,
+  Treemap, RadialBarChart, RadialBar,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend
+} from 'recharts';
 import { 
   User, ShieldAlert, Award, MapPin, CheckCircle, Clock, 
   FileSpreadsheet, Plus, Edit, Trash2, Search, SlidersHorizontal, 
@@ -25,7 +35,7 @@ import {
   deleteUserApi
 } from '../services/api.js';
 
-type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center' | 'transit_map' | 'dsa_learning';
+type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports' | 'command_center' | 'transit_map' | 'dsa_learning' | 'analytics';
 
 // Reusable progress ring
 const ProgressRing: React.FC<{ percentage: number; label: string; colorClass?: string }> = ({ 
@@ -2387,6 +2397,383 @@ export const Dashboard = () => {
     );
   };
 
+  // Premium Recharts Analytics Dashboard View
+  const VisualAnalyticsDashboard: React.FC = () => {
+    const { theme } = useTheme();
+
+    // Data mocks matching system telemetry
+    const areaData = [
+      { name: 'Mon', gordon: 30, union: 24 },
+      { name: 'Tue', gordon: 45, union: 35 },
+      { name: 'Wed', gordon: 60, union: 40 },
+      { name: 'Thu', gordon: 50, union: 48 },
+      { name: 'Fri', gordon: 80, union: 55 },
+      { name: 'Sat', gordon: 95, union: 60 },
+      { name: 'Sun', gordon: 110, union: 75 }
+    ];
+
+    const lineData = [
+      { name: 'Day 1', carbon: 20 },
+      { name: 'Day 2', carbon: 35 },
+      { name: 'Day 3', carbon: 50 },
+      { name: 'Day 4', carbon: 45 },
+      { name: 'Day 5', carbon: 70 },
+      { name: 'Day 6', carbon: 85 },
+      { name: 'Day 7', carbon: 105 }
+    ];
+
+    const pieData = [
+      { name: 'Cooked Meals', value: 400, color: '#10b981' },
+      { name: 'Bakery', value: 300, color: '#6366f1' },
+      { name: 'Fresh Produce', value: 300, color: '#f59e0b' },
+      { name: 'Dairy & Canned', value: 200, color: '#ec4899' }
+    ];
+
+    const barData = [
+      { name: 'Mon', rescued: 15, wasted: 4 },
+      { name: 'Tue', rescued: 22, wasted: 3 },
+      { name: 'Wed', rescued: 30, wasted: 6 },
+      { name: 'Thu', rescued: 28, wasted: 2 },
+      { name: 'Fri', rescued: 45, wasted: 8 },
+      { name: 'Sat', rescued: 50, wasted: 5 },
+      { name: 'Sun', rescued: 65, wasted: 4 }
+    ];
+
+    const radarData = [
+      { subject: 'Response Time', A: 120, B: 110, fullMark: 150 },
+      { subject: 'Route Efficiency', A: 98, B: 130, fullMark: 150 },
+      { subject: 'Claim Volume', A: 86, B: 130, fullMark: 150 },
+      { subject: 'Perishables Speed', A: 99, B: 100, fullMark: 150 },
+      { subject: 'Delivery Success', A: 85, B: 90, fullMark: 150 }
+    ];
+
+    const radialData = [
+      { name: 'Carbon Target', value: 78, fill: '#10b981' },
+      { name: 'Meals Target', value: 85, fill: '#6366f1' },
+      { name: 'NGO Active Target', value: 65, fill: '#f59e0b' }
+    ];
+
+    const treemapData = [
+      { name: 'Grain Chaining', size: 400 },
+      { name: 'Protein Packing', size: 300 },
+      { name: 'Vegetable Lots', size: 250 },
+      { name: 'Desserts Leftovers', size: 150 },
+      { name: 'Bread Diverts', size: 120 }
+    ];
+
+    // Calendar Heatmap simulated cells: 4 weeks x 7 days
+    const calendarWeeks = [
+      [8, 12, 5, 20, 15, 0, 4],
+      [14, 9, 22, 6, 18, 5, 11],
+      [25, 30, 17, 12, 8, 4, 15],
+      [19, 22, 10, 5, 35, 12, 8]
+    ];
+
+    const gridStroke = theme === 'dark' ? '#27272a' : '#e4e4e7';
+    const tooltipStyle = {
+      backgroundColor: theme === 'dark' ? '#18181b' : '#ffffff',
+      border: `1px solid ${theme === 'dark' ? '#27272a' : '#e4e4e7'}`,
+      borderRadius: '12px',
+      color: theme === 'dark' ? '#f4f4f5' : '#18181b',
+      fontSize: '12px'
+    };
+
+    return (
+      <div className="space-y-8 animate-fade-in">
+        {/* Sparkline KPI Cards Header Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 flex justify-between items-center shadow-sm">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest">Meals Rescued Today</span>
+              <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">1,240</h3>
+              <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-1">↑ 12% week over week</span>
+            </div>
+            <div className="w-24 h-12">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={[{v:10},{v:15},{v:12},{v:18},{v:22},{v:30}]}>
+                  <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 flex justify-between items-center shadow-sm">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest">Carbon Equivalent Saved</span>
+              <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">842 kg</h3>
+              <span className="text-[10px] text-indigo-500 font-bold flex items-center gap-1">↑ 8% from yesterday</span>
+            </div>
+            <div className="w-24 h-12">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={[{v:30},{v:25},{v:35},{v:32},{v:40},{v:48}]}>
+                  <Line type="monotone" dataKey="v" stroke="#6366f1" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 flex justify-between items-center shadow-sm">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-500 uppercase tracking-widest">Active Dispatch Riders</span>
+              <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-50">48 Online</h3>
+              <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-1">↑ 15% volunteer hours</span>
+            </div>
+            <div className="w-24 h-12">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={[{v:5},{v:12},{v:8},{v:20},{v:15},{v:28}]}>
+                  <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Row 1: Area Chart & Target Progress circles */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          <div className="lg:col-span-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Diverted Food Weight Trend</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-450">Chronological volumes logged by campus dining kitchens.</p>
+              </div>
+              <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100 dark:bg-zinc-850 px-2 py-0.5 rounded">Weekly</span>
+            </div>
+            
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={areaData}>
+                  <defs>
+                    <linearGradient id="colorGordon" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorUnion" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#888888" fontSize={10} tickLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Legend verticalAlign="top" height={36} iconType="circle" />
+                  <Area name="Gordon Kitchen" type="monotone" dataKey="gordon" stroke="#10b981" fillOpacity={1} fill="url(#colorGordon)" />
+                  <Area name="Union Cafe" type="monotone" dataKey="union" stroke="#6366f1" fillOpacity={1} fill="url(#colorUnion)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 flex flex-col justify-between shadow-sm">
+            <div>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Milestone Progress Rings</h4>
+              <p className="text-xs text-zinc-550 dark:text-zinc-400 mt-0.5">Aggregate target goals matched today.</p>
+            </div>
+            
+            <div className="h-56 relative flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadialBarChart cx="50%" cy="50%" innerRadius="30%" outerRadius="90%" barSize={10} data={radialData}>
+                  <RadialBar
+                    background
+                    dataKey="value"
+                    cornerRadius={5}
+                  />
+                  <Tooltip contentStyle={tooltipStyle} />
+                </RadialBarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="flex justify-around text-[10px] font-bold text-zinc-550 dark:text-zinc-400 pt-2 border-t border-zinc-150 dark:border-zinc-850">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500"></span>Carbon</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-indigo-500"></span>Meals</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500"></span>NGOs</span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Row 2: Stacked Bar Chart & Radar Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm">
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 mb-1">Diverted vs Wasted Surplus</h4>
+            <p className="text-xs text-zinc-500 dark:text-zinc-450 mb-6">Comparison volume ratios of meals rescued vs meals discarded.</p>
+            
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#888888" fontSize={10} tickLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Legend verticalAlign="top" height={36} iconType="circle" />
+                  <Bar name="Meals Rescued (kg)" dataKey="rescued" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+                  <Bar name="Meals Wasted (kg)" dataKey="wasted" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm">
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 mb-1">Volunteer Performance Dimensions</h4>
+            <p className="text-xs text-zinc-500 dark:text-zinc-450 mb-6">Metrics tracking active dispatches efficiencies indices.</p>
+            
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
+                  <PolarGrid stroke={gridStroke} />
+                  <PolarAngleAxis dataKey="subject" stroke="#888888" fontSize={9} />
+                  <PolarRadiusAxis angle={30} domain={[0, 150]} stroke="#888888" fontSize={9} />
+                  <Radar name="Active Fleet" dataKey="A" stroke="#6366f1" fill="#6366f1" fillOpacity={0.25} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Row 2.5: Carbon Savings Trend (Animated Line Chart) */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm">
+          <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 mb-1">Carbon Reduction Impact (Animated Line Chart)</h4>
+          <p className="text-xs text-zinc-500 dark:text-zinc-450 mb-6">Chronological tracking of carbon emissions prevented (kg CO2e).</p>
+          
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={lineData}>
+                <defs>
+                  <linearGradient id="lineColor" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#6366f1" />
+                    <stop offset="100%" stopColor="#10b981" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} />
+                <YAxis stroke="#888888" fontSize={10} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend verticalAlign="top" height={36} iconType="circle" />
+                <Line 
+                  name="Carbon Prevented (kg)" 
+                  type="monotone" 
+                  dataKey="carbon" 
+                  stroke="url(#lineColor)" 
+                  strokeWidth={3.5} 
+                  activeDot={{ r: 8 }}
+                  animationDuration={1500}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Row 3: Treemap & Pie Chart (Donut) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm">
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 mb-1">Diverted Category Treemap</h4>
+            <p className="text-xs text-zinc-500 dark:text-zinc-450 mb-6">Proportional weights density mapping categories.</p>
+            
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <Treemap
+                  data={treemapData}
+                  dataKey="size"
+                  stroke={theme === 'dark' ? '#18181b' : '#ffffff'}
+                  fill="#6366f1"
+                />
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 flex flex-col justify-between shadow-sm">
+            <div>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 mb-1">Donation Category Split</h4>
+              <p className="text-xs text-zinc-500 dark:text-zinc-450">Distribution of rescued food categories.</p>
+            </div>
+            
+            <div className="h-56 relative flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-[10px] font-bold text-zinc-550 dark:text-zinc-400 pt-4 border-t border-zinc-150 dark:border-zinc-850">
+              {pieData.map((d, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                  <span>{d.name} ({Math.round((d.value / 1200) * 100)}%)</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Row 4: Calendar Heatmap */}
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm">
+          <div className="mb-4">
+            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Donation Frequency Grid (Calendar Heatmap)</h4>
+            <p className="text-xs text-zinc-550 dark:text-zinc-400 mt-0.5">Logs intensity mapping of daily completed dispatches.</p>
+          </div>
+
+          <div className="flex flex-col gap-1.5 overflow-x-auto pr-2 pb-2 custom-scrollbar">
+            {calendarWeeks.map((week, wIdx) => (
+              <div key={wIdx} className="flex gap-1.5 min-w-[350px]">
+                <span className="text-[10px] text-zinc-450 w-12 font-bold select-none py-1">Week {wIdx + 1}</span>
+                {week.map((val, dIdx) => {
+                  // Determine shade density matching value
+                  const bgClass = 
+                    val === 0 ? 'bg-zinc-100 dark:bg-zinc-850' :
+                    val < 10 ? 'bg-emerald-500/10 border-emerald-500/20' :
+                    val < 20 ? 'bg-emerald-500/30 border-emerald-500/40' :
+                    val < 30 ? 'bg-emerald-500/60 border-emerald-500/70' :
+                    'bg-emerald-500 text-white';
+
+                  return (
+                    <div
+                      key={dIdx}
+                      title={`Volume: ${val} kg`}
+                      className={`h-7 w-7 rounded-lg border flex items-center justify-center text-[9px] font-bold cursor-pointer select-none hover:scale-105 active:scale-95 transition-all ${bgClass}`}
+                    >
+                      {val > 0 && val}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-4 text-[10px] font-bold text-zinc-450 dark:text-zinc-500 mt-4 pt-4 border-t border-zinc-150 dark:border-zinc-850">
+            <span>Color Density Key:</span>
+            <span className="flex items-center gap-1"><span className="h-3.5 w-3.5 rounded bg-zinc-100 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-800"></span> 0 kg</span>
+            <span className="flex items-center gap-1"><span className="h-3.5 w-3.5 rounded bg-emerald-500/20 border border-emerald-500/30"></span> 1-10 kg</span>
+            <span className="flex items-center gap-1"><span className="h-3.5 w-3.5 rounded bg-emerald-500/50 border border-emerald-500/60"></span> 11-29 kg</span>
+            <span className="flex items-center gap-1"><span className="h-3.5 w-3.5 rounded bg-emerald-500 border"></span> 30+ kg</span>
+          </div>
+        </div>
+
+      </div>
+    );
+  };
+
   if (user?.role === 'Student') {
     const studentFilteredFoods = getFilteredAvailableFoods();
     const activeClaims = reservedFoods.filter(f => f.status === 'Reserved');
@@ -2397,6 +2784,7 @@ export const Dashboard = () => {
       { id: 'reservations', label: 'My Reservations', icon: FileSpreadsheet },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
+      { id: 'analytics', label: 'Impact Analytics', icon: LayoutDashboard },
       { id: 'dsa_learning', label: 'DSA Learning', icon: BookOpen },
       { id: 'profile', label: 'My Profile', icon: User },
     ];
@@ -2651,6 +3039,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <DsaLearningCenter />
+              </motion.div>
+            )}
+            {activeTab === 'analytics' && (
+              <motion.div
+                key="student-analytics"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <VisualAnalyticsDashboard />
               </motion.div>
             )}
 
@@ -3005,6 +3403,7 @@ export const Dashboard = () => {
       { id: 'reservations', label: 'My Donations', icon: FileSpreadsheet },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
+      { id: 'analytics', label: 'Impact Analytics', icon: LayoutDashboard },
       { id: 'dsa_learning', label: 'DSA Learning', icon: BookOpen },
       { id: 'profile', label: 'NGO Profile', icon: User },
     ];
@@ -3259,6 +3658,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <DsaLearningCenter />
+              </motion.div>
+            )}
+            {activeTab === 'analytics' && (
+              <motion.div
+                key="ngo-analytics"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <VisualAnalyticsDashboard />
               </motion.div>
             )}
 
@@ -3620,9 +4029,10 @@ export const Dashboard = () => {
     const collectedListings = systemListings.filter(l => l.status === 'Collected').length;
 
     const adminTabs = [
-      { id: 'overview', label: 'Analytics', icon: LayoutDashboard },
+      { id: 'overview', label: 'System Overview', icon: ShieldAlert },
       { id: 'command_center', label: 'Command Center', icon: Activity },
       { id: 'transit_map', label: 'Transit Map', icon: Compass },
+      { id: 'analytics', label: 'Impact Analytics', icon: LayoutDashboard },
       { id: 'dsa_learning', label: 'DSA Learning', icon: BookOpen },
       { id: 'users', label: 'User Directory', icon: User },
       { id: 'listings', label: 'System Listings', icon: Utensils },
@@ -3768,6 +4178,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <DsaLearningCenter />
+              </motion.div>
+            )}
+            {activeTab === 'analytics' && (
+              <motion.div
+                key="admin-analytics-view"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <VisualAnalyticsDashboard />
               </motion.div>
             )}
 
@@ -4193,6 +4613,7 @@ export const Dashboard = () => {
     { id: 'listings', label: 'Food Listings', icon: Utensils },
     { id: 'command_center', label: 'Command Center', icon: Activity },
     { id: 'transit_map', label: 'Transit Map', icon: Compass },
+    { id: 'analytics', label: 'Impact Analytics', icon: LayoutDashboard },
     { id: 'dsa_learning', label: 'DSA Learning', icon: BookOpen },
     { id: 'profile', label: 'Kitchen Profile', icon: User },
   ];
@@ -4416,6 +4837,16 @@ export const Dashboard = () => {
                 exit={{ opacity: 0, y: -15 }}
               >
                 <DsaLearningCenter />
+              </motion.div>
+            )}
+            {activeTab === 'analytics' && (
+              <motion.div
+                key="kitchen-analytics"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+              >
+                <VisualAnalyticsDashboard />
               </motion.div>
             )}
 
