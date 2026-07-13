@@ -233,6 +233,14 @@ export const reserveFood = async (
       return;
     }
 
+    if (req.user.role !== 'Student' && req.user.role !== 'NGO' && req.user.role !== 'Admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Only Students, NGOs, or Admins can claim food listings.',
+      });
+      return;
+    }
+
     const food = await Food.findById(id);
     if (!food) {
       res.status(404).json({

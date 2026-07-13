@@ -213,3 +213,87 @@ export const getMe = async (
     next(error);
   }
 };
+
+export const getAllUsers = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUserRole = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!['Student', 'Kitchen Staff', 'NGO', 'Volunteer', 'Admin'].includes(role)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid role specified',
+      });
+      return;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { role },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: `User not found with id: ${id}`,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User role updated successfully',
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUser = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndDelete(id);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: `User not found with id: ${id}`,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};

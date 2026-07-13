@@ -16,10 +16,13 @@ import {
   deleteFoodApi,
   reserveFoodApi,
   cancelReservationApi,
-  collectFoodApi
+  collectFoodApi,
+  getUsersApi,
+  updateUserRoleApi,
+  deleteUserApi
 } from '../services/api.js';
 
-type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations';
+type TabView = 'overview' | 'listings' | 'add-food' | 'edit-food' | 'profile' | 'reservations' | 'users' | 'reports';
 
 export const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -80,6 +83,17 @@ export const Dashboard = () => {
   const [studentCategory, setStudentCategory] = useState('All');
   const [studentVegFilter, setStudentVegFilter] = useState('All');
   const [studentSortBy, setStudentSortBy] = useState('newest');
+
+  // Admin states
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [adminUserSearch, setAdminUserSearch] = useState('');
+  const [adminUserRoleFilter, setAdminUserRoleFilter] = useState('All');
+  const [adminConfirmDeleteUserId, setAdminConfirmDeleteUserId] = useState<string | null>(null);
+  
+  // Analytics states (All listings in system)
+  const [systemListings, setSystemListings] = useState<any[]>([]);
+  const [loadingSystemListings, setLoadingSystemListings] = useState(true);
 
   const categories = ['Cooked Meals', 'Baked Goods', 'Raw Ingredients', 'Groceries', 'Others'];
 
@@ -1038,6 +1052,575 @@ export const Dashboard = () => {
                     className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer"
                   >
                     Confirm Claim Reservation
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  if (user?.role === 'NGO') {
+    const ngoFilteredFoods = getFilteredAvailableFoods();
+    const activeClaims = reservedFoods.filter(f => f.status === 'Reserved');
+    const pastPickups = reservedFoods.filter(f => f.status === 'Collected');
+
+    return (
+      <div className="flex-grow bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 transition-colors duration-300">
+        {/* Sub-Header Tabs */}
+        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 backdrop-blur-sm sticky top-16 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-14">
+              <div className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none py-1">
+                {[
+                  { id: 'overview', label: 'Browse Donations', icon: Utensils },
+                  { id: 'reservations', label: 'My Donations', icon: FileSpreadsheet },
+                  { id: 'profile', label: 'NGO Profile', icon: User },
+                ].map(tab => {
+                  const TabIcon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as TabView)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                          : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40'
+                      }`}
+                    >
+                      <TabIcon className="h-4 w-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeClaims.length > 0 && (
+                <span className="flex h-2.5 w-2.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  <span className="text-xs font-bold text-emerald-500 ml-2 hidden sm:inline">{activeClaims.length} Claim{activeClaims.length > 1 ? 's' : ''} Claimed</span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <AnimatePresence mode="wait">
+            
+            {/* NGO Overview tab */}
+            {activeTab === 'overview' && (
+              <motion.div
+                key="ngo-overview"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-8"
+              >
+                {/* Greeting Hero */}
+                <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-indigo-500/10 border border-emerald-500/10 dark:border-emerald-500/5 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div className="space-y-2">
+                    <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
+                      Hello, {user?.name} 🤝
+                    </h2>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xl">
+                      Claim bulk surplus food donations from restaurants and campus kitchens to redistribute to local food banks and community shelters.
+                    </p>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-center min-w-[100px] shadow-sm">
+                      <span className="block text-2xl font-black text-emerald-500">{ngoFilteredFoods.length}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Available Bulk</span>
+                    </div>
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-center min-w-[100px] shadow-sm">
+                      <span className="block text-2xl font-black text-amber-500">{activeClaims.length}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Claims Active</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm">
+                  {/* Search */}
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
+                      <Search className="h-4.5 w-4.5" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search bulk donations..."
+                      value={studentSearch}
+                      onChange={e => setStudentSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {/* Categories */}
+                  <div>
+                    <select
+                      value={studentCategory}
+                      onChange={e => setStudentCategory(e.target.value)}
+                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                    >
+                      <option value="All">All Categories</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Veg / Non-Veg */}
+                  <div>
+                    <select
+                      value={studentVegFilter}
+                      onChange={e => setStudentVegFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                    >
+                      <option value="All">All Diets (Veg / Non-Veg)</option>
+                      <option value="Veg">Vegetarian Only</option>
+                      <option value="Non-Veg">Non-Vegetarian Only</option>
+                    </select>
+                  </div>
+
+                  {/* Sorting */}
+                  <div>
+                    <select
+                      value={studentSortBy}
+                      onChange={e => setStudentSortBy(e.target.value)}
+                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                    >
+                      <option value="newest">Sort: Newest First</option>
+                      <option value="pickup">Sort: Pickup Time</option>
+                      <option value="quantity">Sort: High Quantity</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Available Listing Grid */}
+                {loadingAvailable && availableFoods.length === 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map(n => (
+                      <CardSkeleton key={n} />
+                    ))}
+                  </div>
+                ) : ngoFilteredFoods.length === 0 ? (
+                  <div className="border border-zinc-200 dark:border-zinc-800 rounded-3xl p-16 text-center bg-white dark:bg-zinc-900/40">
+                    <Utensils className="h-12 w-12 text-zinc-400 mx-auto mb-4" />
+                    <h4 className="font-bold text-zinc-900 dark:text-zinc-50">No surplus donations available</h4>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto mt-1">
+                      Check back later! Restaurants post fresh surplus meals throughout the day.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {ngoFilteredFoods.map(food => {
+                      const cleanDesc = getCleanDescription(food.description);
+                      const vegTag = getVegBadge(food.description);
+                      const pickupTime = getPickupHours(food.description);
+                      return (
+                        <div 
+                          key={food._id}
+                          className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                        >
+                          <div className="relative">
+                            {food.image && (
+                              <img 
+                                src={food.image} 
+                                alt={food.title} 
+                                className="h-44 w-full object-cover"
+                              />
+                            )}
+                            <div className="absolute top-3 right-3 flex gap-1.5">
+                              {vegTag && (
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border shadow-sm ${
+                                  vegTag === 'Veg' 
+                                    ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
+                                    : 'bg-red-500/10 text-red-600 border-red-500/20'
+                                }`}>
+                                  {vegTag}
+                                </span>
+                              )}
+                              <span className="px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm">
+                                Available
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-5 flex-grow flex flex-col justify-between">
+                            <div className="space-y-2">
+                              <span className="inline-block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                                {food.category}
+                              </span>
+                              <h3 className="font-extrabold text-zinc-900 dark:text-zinc-50 text-base leading-snug truncate">
+                                {food.title}
+                              </h3>
+                              <p className="text-zinc-500 dark:text-zinc-400 text-xs line-clamp-2 leading-relaxed">
+                                {cleanDesc}
+                              </p>
+                              
+                              <div className="space-y-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                                <div className="flex items-center text-xs text-zinc-500 gap-2">
+                                  <SlidersHorizontal className="h-3.5 w-3.5 text-zinc-400 flex-shrink-0" />
+                                  <span>Quantity: <strong className="text-zinc-800 dark:text-zinc-200">{food.quantity} {food.unit}</strong></span>
+                                </div>
+                                <div className="flex items-center text-xs text-zinc-500 gap-2">
+                                  <MapPin className="h-3.5 w-3.5 text-zinc-400 flex-shrink-0" />
+                                  <span className="truncate" title={food.pickupLocation}>{food.pickupLocation}</span>
+                                </div>
+                                {pickupTime && (
+                                  <div className="flex items-center text-xs text-zinc-500 gap-2">
+                                    <Clock className="h-3.5 w-3.5 text-zinc-400 flex-shrink-0" />
+                                    <span>Pickup window: {pickupTime}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => setSelectedFoodDetails(food)}
+                              className="w-full mt-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-emerald-500/10 cursor-pointer text-center block"
+                            >
+                              View & Claim Donation
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* NGO Reservations tab */}
+            {activeTab === 'reservations' && (
+              <motion.div
+                key="ngo-reservations"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-8"
+              >
+                <div>
+                  <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                    My Donations claimed
+                  </h2>
+                  <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-0.5">
+                    Track claimed food shipments, pickups completed, and cancellation history.
+                  </p>
+                </div>
+
+                {loadingReserved && reservedFoods.length === 0 ? (
+                  <div className="space-y-4">
+                    {[1, 2].map(n => (
+                      <div key={n} className="h-28 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse rounded-2xl" />
+                    ))}
+                  </div>
+                ) : (reservedFoods.length === 0 && cancelledHistory.length === 0) ? (
+                  <div className="border border-zinc-200 dark:border-zinc-800 rounded-3xl p-16 text-center bg-white dark:bg-zinc-900/40">
+                    <FileSpreadsheet className="h-12 w-12 text-zinc-400 mx-auto mb-4" />
+                    <h4 className="font-bold text-zinc-900 dark:text-zinc-50">No donations claimed</h4>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto mt-1 mb-4">
+                      You haven't claimed any surplus donations yet.
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('overview')}
+                      className="px-4 py-2 bg-zinc-900 dark:bg-zinc-150 dark:text-zinc-900 hover:bg-zinc-850 text-white text-xs font-semibold rounded-xl"
+                    >
+                      Browse Bulk Donations
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    
+                    {/* Active Claims Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                        Active Claims ({activeClaims.length})
+                      </h3>
+                      {activeClaims.length === 0 ? (
+                        <p className="text-xs text-zinc-450 dark:text-zinc-500 italic pl-4">No active bulk donation claims.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                          {activeClaims.map(food => {
+                            const cleanDesc = getCleanDescription(food.description);
+                            const vegTag = getVegBadge(food.description);
+                            const pickupTime = getPickupHours(food.description);
+                            return (
+                              <div 
+                                key={food._id}
+                                className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 bg-white dark:bg-zinc-900 shadow-sm flex flex-col md:flex-row gap-5 items-start md:items-center justify-between hover:border-zinc-300 transition-all"
+                              >
+                                <div className="flex gap-4 items-start">
+                                  {food.image && (
+                                    <img src={food.image} alt={food.title} className="h-16 w-16 rounded-xl object-cover border dark:border-zinc-800 flex-shrink-0" />
+                                  )}
+                                  <div className="space-y-1">
+                                    <div className="flex flex-wrap gap-2 items-center">
+                                      <h4 className="font-extrabold text-zinc-900 dark:text-zinc-50 text-base leading-snug">{food.title}</h4>
+                                      {vegTag && (
+                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
+                                          vegTag === 'Veg' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'
+                                        }`}>{vegTag}</span>
+                                      )}
+                                    </div>
+                                    <p className="text-zinc-500 dark:text-zinc-400 text-xs line-clamp-1">{cleanDesc}</p>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 items-center mt-2 text-xs text-zinc-400">
+                                      <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 text-zinc-450" /> {food.pickupLocation}</span>
+                                      {pickupTime && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3 text-zinc-450" /> Slot: {pickupTime}</span>}
+                                      <span>Qty: <strong>{food.quantity} {food.unit}</strong></span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex sm:flex-row gap-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-4 md:pt-0 mt-3 md:mt-0">
+                                  <button
+                                    onClick={() => handleCancelReservation(food)}
+                                    className="px-4 py-2 border border-zinc-200 dark:border-zinc-850 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 text-xs font-bold rounded-xl cursor-pointer"
+                                  >
+                                    Cancel Claim
+                                  </button>
+                                  <button
+                                    onClick={() => handleCollectFood(food)}
+                                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl cursor-pointer inline-flex items-center gap-1 shadow-sm shadow-emerald-500/10"
+                                  >
+                                    <CheckCircle className="h-3.5 w-3.5" />
+                                    Mark Pickup Complete
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pickups Completed History */}
+                    <div className="space-y-4 pt-4 border-t border-zinc-150 dark:border-zinc-800">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-sky-500"></span>
+                        Completed Pickups ({pastPickups.length})
+                      </h3>
+                      {pastPickups.length === 0 ? (
+                        <p className="text-xs text-zinc-450 dark:text-zinc-500 italic pl-4">No completed pickups yet.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-3">
+                          {pastPickups.map(food => (
+                            <div key={food._id} className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 bg-white dark:bg-zinc-900/50 flex items-center justify-between opacity-80 hover:opacity-100 transition-all">
+                              <div>
+                                <h4 className="font-bold text-zinc-900 dark:text-zinc-50 text-sm leading-snug">{food.title}</h4>
+                                <div className="flex gap-4 text-xs text-zinc-550 dark:text-zinc-400 mt-1">
+                                  <span>Quantity: {food.quantity} {food.unit}</span>
+                                  <span>•</span>
+                                  <span>Picked Up: {new Date(food.updatedAt).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                              <span className="px-2.5 py-0.5 bg-sky-100 text-sky-850 dark:bg-sky-950/40 dark:text-sky-400 border border-sky-200 dark:border-sky-900/50 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                Picked Up
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Cancelled Claims History */}
+                    <div className="space-y-4 pt-4 border-t border-zinc-150 dark:border-zinc-800">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
+                        Cancelled Claims ({cancelledHistory.length})
+                      </h3>
+                      {cancelledHistory.length === 0 ? (
+                        <p className="text-xs text-zinc-450 dark:text-zinc-500 italic pl-4">No cancelled claims.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-3">
+                          {cancelledHistory.map((item, index) => (
+                            <div key={index} className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 bg-white dark:bg-zinc-900/40 flex items-center justify-between opacity-60">
+                              <div>
+                                <h4 className="font-bold text-zinc-900 dark:text-zinc-50 text-sm leading-snug">{item.title}</h4>
+                                <div className="flex gap-4 text-xs text-zinc-555 dark:text-zinc-400 mt-1">
+                                  <span>Quantity: {item.quantity} {item.unit}</span>
+                                  <span>•</span>
+                                  <span>Cancelled: {new Date(item.cancelledAt || Date.now()).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                              <span className="px-2.5 py-0.5 bg-rose-100 text-rose-850 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                Cancelled
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* NGO Profile tab */}
+            {activeTab === 'profile' && (
+              <motion.div
+                key="ngo-profile"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="max-w-2xl mx-auto border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden"
+              >
+                {/* Banner */}
+                <div className="h-32 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-500 relative flex items-end p-6">
+                  <div className="absolute bottom-[-32px] left-6 h-20 w-20 rounded-full bg-white dark:bg-zinc-900 border-4 border-white dark:border-zinc-900 shadow-md flex items-center justify-center font-extrabold text-3xl text-zinc-700 dark:text-zinc-300">
+                    {user?.name?.[0]?.toUpperCase() || ''}
+                  </div>
+                </div>
+
+                <div className="pt-12 p-6 space-y-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">{user?.name}</h2>
+                    <span className="inline-block px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1.5">
+                      {user?.role} Organization
+                    </span>
+                  </div>
+
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 pt-5 space-y-4">
+                    <div className="grid grid-cols-3 text-sm">
+                      <span className="text-zinc-400 font-medium">Email Address</span>
+                      <span className="col-span-2 text-zinc-800 dark:text-zinc-200 font-semibold">{user?.email}</span>
+                    </div>
+                    <div className="grid grid-cols-3 text-sm">
+                      <span className="text-zinc-400 font-medium">Registered Since</span>
+                      <span className="col-span-2 text-zinc-800 dark:text-zinc-200 font-semibold font-mono">
+                        {new Date(user?.createdAt || Date.now()).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 text-sm">
+                      <span className="text-zinc-400 font-medium">Workspace Status</span>
+                      <span className="col-span-2 text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                        Active Live System
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6 flex justify-between items-center">
+                    <button
+                      onClick={logout}
+                      className="px-4 py-2 border border-zinc-250 dark:border-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 text-sm font-semibold rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <LogOut className="h-4.5 w-4.5" />
+                      Sign Out NGO Account
+                    </button>
+                    <p className="text-[11px] text-zinc-400 font-medium">EcoShare V1.0.0 Foundation</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+
+        {/* Food Details Modal Overlay */}
+        <AnimatePresence>
+          {selectedFoodDetails && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col justify-between"
+              >
+                <div>
+                  {selectedFoodDetails.image && (
+                    <div className="h-48 relative">
+                      <img src={selectedFoodDetails.image} alt={selectedFoodDetails.title} className="h-full w-full object-cover" />
+                      <div className="absolute top-4 right-4 flex gap-1.5">
+                        {getVegBadge(selectedFoodDetails.description) && (
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border shadow-sm ${
+                            getVegBadge(selectedFoodDetails.description) === 'Veg' 
+                              ? 'bg-emerald-500 text-white border-emerald-500' 
+                              : 'bg-red-500 text-white border-red-500'
+                          }`}>{getVegBadge(selectedFoodDetails.description)}</span>
+                        )}
+                        <span className="px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[9px] font-bold border border-emerald-400 uppercase tracking-wider shadow-sm">
+                          Available
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">{selectedFoodDetails.category}</span>
+                      <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-50">{selectedFoodDetails.title}</h3>
+                    </div>
+
+                    <div className="space-y-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                      <div className="grid grid-cols-3 text-xs leading-relaxed">
+                        <span className="text-zinc-400 font-medium">Donor Restaurant</span>
+                        <span className="col-span-2 text-zinc-800 dark:text-zinc-200 font-semibold">
+                          {selectedFoodDetails.createdBy?.name || 'Campus Kitchen Staff'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 text-xs leading-relaxed">
+                        <span className="text-zinc-400 font-medium">Donor Contact</span>
+                        <span className="col-span-2 text-zinc-850 dark:text-zinc-300 font-semibold font-mono">
+                          {selectedFoodDetails.createdBy?.email || 'contact@ecoshare.com'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 text-xs leading-relaxed">
+                        <span className="text-zinc-400 font-medium">Description</span>
+                        <span className="col-span-2 text-zinc-700 dark:text-zinc-300 font-medium">
+                          {getCleanDescription(selectedFoodDetails.description)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 text-xs leading-relaxed">
+                        <span className="text-zinc-400 font-medium">Bulk Quantity</span>
+                        <span className="col-span-2 text-zinc-800 dark:text-zinc-200 font-bold">
+                          {selectedFoodDetails.quantity} {selectedFoodDetails.unit}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 text-xs leading-relaxed">
+                        <span className="text-zinc-400 font-medium">Pickup Address</span>
+                        <span className="col-span-2 text-zinc-700 dark:text-zinc-300 font-medium inline-flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5 text-zinc-400 flex-shrink-0" />
+                          {selectedFoodDetails.pickupLocation}
+                        </span>
+                      </div>
+                      {getPickupHours(selectedFoodDetails.description) && (
+                        <div className="grid grid-cols-3 text-xs leading-relaxed">
+                          <span className="text-zinc-400 font-medium">Pickup Window</span>
+                          <span className="col-span-2 text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                            {getPickupHours(selectedFoodDetails.description)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 text-xs leading-relaxed">
+                        <span className="text-zinc-400 font-medium">Expires At</span>
+                        <span className="col-span-2 text-zinc-650 dark:text-zinc-300 font-semibold font-mono">
+                          {new Date(selectedFoodDetails.expiryTime).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-zinc-50 dark:bg-zinc-800/10 border-t border-zinc-100 dark:border-zinc-800 flex gap-3">
+                  <button
+                    onClick={() => setSelectedFoodDetails(null)}
+                    className="flex-1 py-2.5 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleReserveFood(selectedFoodDetails._id)}
+                    className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer"
+                  >
+                    Confirm Claim Donation
                   </button>
                 </div>
               </motion.div>

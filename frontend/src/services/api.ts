@@ -97,3 +97,20 @@ export const collectFoodApi = async (id: string) => {
     method: 'PATCH',
   });
 };
+
+export const getUsersApi = async () => {
+  return apiRequest('/auth/users');
+};
+
+export const updateUserRoleApi = async (id: string, role: string) => {
+  return apiRequest(`/auth/users/${id}/role`, {
+    method: 'PATCH',
+    body: { role },
+  });
+};
+
+export const deleteUserApi = async (id: string) => {
+  return apiRequest(`/auth/users/${id}`, {
+    method: 'DELETE',
+  });
+};
