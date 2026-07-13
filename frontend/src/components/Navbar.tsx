@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { useTheme } from '../context/ThemeContext.js';
@@ -9,6 +9,7 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,10 +20,10 @@ export const Navbar: React.FC = () => {
   };
 
   const navLinks = [
-    { name: 'Features', href: '#features' },
-    { name: 'Statistics', href: '#statistics' },
-    { name: 'FAQ', href: '#faq' },
-    { name: 'Contact', href: '#contact' },
+    { name: 'Features', href: '/#features' },
+    { name: 'Statistics', href: '/#statistics' },
+    { name: 'FAQ', href: '/#faq' },
+    { name: 'Contact', href: '/#contact' },
   ];
 
   // Helper to get role badge style
@@ -43,19 +44,51 @@ export const Navbar: React.FC = () => {
 
   const isLandingPage = location.pathname === '/';
 
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+  // Scrollspy logic: update active section as user scrolls
+  useEffect(() => {
+    if (!isLandingPage) {
+      setActiveSection('');
+      return;
+    }
+
+    const handleScroll = () => {
+      const sections = ['features', 'statistics', 'faq', 'contact'];
+      const scrollPosition = window.scrollY + 200; // offset for nav height
+
+      for (const section of sections) {
+        const el = document.getElementById(section);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // run once initially
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isLandingPage]);
+
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const id = href.split('#')[1];
     if (isLandingPage) {
       e.preventDefault();
-      const element = document.getElementById(id.replace('#', ''));
+      const element = document.getElementById(id);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
+        window.history.pushState(null, '', `#${id}`);
       }
       setIsOpen(false);
     }
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md transition-colors duration-300">
+    <nav className="sticky top-0 z-40 w-full border-b border-zinc-200/85 dark:border-zinc-800/85 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
@@ -64,7 +97,7 @@ export const Navbar: React.FC = () => {
               <div className="p-1.5 bg-emerald-500 rounded-lg text-white shadow-md shadow-emerald-500/25">
                 <Leaf className="h-5 w-5" />
               </div>
-              <span className="bg-gradient-to-r from-zinc-950 via-zinc-800 to-zinc-600 dark:from-zinc-50 dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-zinc-950 via-zinc-800 to-zinc-600 dark:from-zinc-50 dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent font-black tracking-tight">
                 EcoShare
               </span>
             </Link>
@@ -72,16 +105,31 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center space-x-6">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={(e) => scrollToSection(e, link.href)}
-                className="text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-              >
-                {link.name}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const sectionId = link.href.split('#')[1];
+              const isActive = activeSection === sectionId;
+              return (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  onClick={(e) => scrollToSection(e, link.href)}
+                  className={`text-sm font-semibold transition-all relative py-1 ${
+                    isActive
+                      ? 'text-emerald-500 dark:text-emerald-400'
+                      : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
+                  }`}
+                >
+                  {link.name}
+                  {isActive && (
+                    <motion.span
+                      layoutId="activeNavIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 dark:bg-emerald-400 rounded-full"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </a>
+              );
+            })}
           </div>
 
           {/* Right Actions */}
@@ -167,16 +215,24 @@ export const Navbar: React.FC = () => {
             className="md:hidden border-t border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 overflow-hidden"
           >
             <div className="px-4 pt-2 pb-6 space-y-4">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={(e) => scrollToSection(e, link.href)}
-                  className="block px-3 py-2 text-base font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-xl transition-all"
-                >
-                  {link.name}
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                const sectionId = link.href.split('#')[1];
+                const isActive = activeSection === sectionId;
+                return (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    onClick={(e) => scrollToSection(e, link.href)}
+                    className={`block px-3 py-2 text-base font-bold rounded-xl transition-all ${
+                      isActive
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold'
+                        : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                    }`}
+                  >
+                    {link.name}
+                  </a>
+                );
+              })}
 
               <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 space-y-3">
                 {isAuthenticated && user ? (

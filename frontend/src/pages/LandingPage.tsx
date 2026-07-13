@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext.js';
 import { useToast } from '../components/ui/Toast.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,6 +37,19 @@ const CountUp: React.FC<{ value: number; decimals?: number; suffix?: string; dur
 export const LandingPage: React.FC = () => {
   const { theme } = useTheme();
   const { toast } = useToast();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (window.location.hash) {
+      const id = window.location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      }
+    }
+  }, [location]);
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactMessage, setContactMessage] = useState('');
@@ -263,7 +276,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Live Impact Counter Banner */}
-      <section className="py-16 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-950 text-white relative">
+      <section id="statistics" className="py-16 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-zinc-950 text-white relative">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.06),transparent_70%)] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
@@ -340,7 +353,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Interactive Carbon Calculator Section */}
-      <section className="py-24 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-white/40 dark:bg-zinc-950/20">
+      <section id="features" className="py-24 border-t border-zinc-200/50 dark:border-zinc-800/50 bg-white/40 dark:bg-zinc-950/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
@@ -510,7 +523,7 @@ export const LandingPage: React.FC = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="border-t border-zinc-150 dark:border-zinc-800"
+                        className="border-t border-zinc-150 dark:border-zinc-800 overflow-hidden"
                       >
                         <p className="p-5 text-xs text-zinc-550 dark:text-zinc-400 leading-relaxed">
                           {faq.a}

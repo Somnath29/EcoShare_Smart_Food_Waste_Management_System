@@ -7,7 +7,7 @@ import {
   User, ShieldAlert, Award, MapPin, CheckCircle, Clock, 
   FileSpreadsheet, Plus, Edit, Trash2, Search, SlidersHorizontal, 
   List, Grid, ChevronRight, ArrowLeft, LogOut, LayoutDashboard,
-  Utensils, CalendarDays, Compass
+  Utensils, CalendarDays, Compass, Loader2
 } from 'lucide-react';
 import { 
   getFoodsApi, 
@@ -184,6 +184,7 @@ export const Dashboard = () => {
   const [loadingListings, setLoadingListings] = useState(true);
   const [editingFood, setEditingFood] = useState<any | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [actionLoadingIds, setActionLoadingIds] = useState<string[]>([]);
   
   // Filter/Sort States
   const [searchQuery, setSearchQuery] = useState('');
@@ -405,6 +406,7 @@ export const Dashboard = () => {
 
   // Student specific handlers
   const handleReserveFood = async (foodId: string) => {
+    setActionLoadingIds(prev => [...prev, foodId]);
     try {
       const data = await reserveFoodApi(foodId);
       if (data.success && data.food) {
@@ -418,10 +420,13 @@ export const Dashboard = () => {
       }
     } catch (error: any) {
       toast('error', error.message || 'Failed to reserve food item');
+    } finally {
+      setActionLoadingIds(prev => prev.filter(id => id !== foodId));
     }
   };
 
   const handleCancelReservation = async (food: any) => {
+    setActionLoadingIds(prev => [...prev, food._id]);
     try {
       const data = await cancelReservationApi(food._id);
       if (data.success) {
@@ -442,10 +447,13 @@ export const Dashboard = () => {
       }
     } catch (error: any) {
       toast('error', error.message || 'Failed to cancel reservation');
+    } finally {
+      setActionLoadingIds(prev => prev.filter(id => id !== food._id));
     }
   };
 
   const handleCollectFood = async (food: any) => {
+    setActionLoadingIds(prev => [...prev, food._id]);
     try {
       const data = await collectFoodApi(food._id);
       if (data.success) {
@@ -455,6 +463,8 @@ export const Dashboard = () => {
       }
     } catch (error: any) {
       toast('error', error.message || 'Failed to mark collection');
+    } finally {
+      setActionLoadingIds(prev => prev.filter(id => id !== food._id));
     }
   };
 
@@ -723,56 +733,140 @@ export const Dashboard = () => {
     return match ? match[1] : null;
   };
 
+  // Unified Premium Dashboard Layout Wrapper (Notion/Linear inspired side-nav)
+  const DashboardLayout: React.FC<{
+    user: any;
+    activeTab: TabView;
+    setActiveTab: (tab: TabView) => void;
+    tabs: Array<{ id: string; label: string; icon: any }>;
+    children: React.ReactNode;
+    onLogout: () => void;
+    extraHeaderAction?: React.ReactNode;
+  }> = ({ user, activeTab, setActiveTab, tabs, children, onLogout, extraHeaderAction }) => {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col md:flex-row bg-zinc-50/40 dark:bg-zinc-950/40 transition-colors duration-300 relative">
+        
+        {/* Desktop Side Navigation */}
+        <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-16 md:left-0 md:bg-white dark:md:bg-zinc-900 border-r border-zinc-200/50 dark:border-zinc-800/50 z-20 justify-between py-6 px-4">
+          <div className="space-y-6">
+            {/* User Profile Card */}
+            <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-150 dark:border-zinc-800/50 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                {user?.name?.[0]?.toUpperCase()}
+              </div>
+              <div className="overflow-hidden">
+                <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-50 truncate">{user?.name}</h4>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate mt-0.5">{user?.email}</p>
+              </div>
+            </div>
+
+            {/* Navigation Lists */}
+            <nav className="space-y-1 relative">
+              {tabs.map((tab) => {
+                const TabIcon = tab.icon;
+                const isActive = activeTab === tab.id || (tab.id === 'listings' && (activeTab === 'add-food' || activeTab === 'edit-food'));
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabView)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer relative group ${
+                      isActive
+                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-md'
+                        : 'text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'
+                    }`}
+                  >
+                    <TabIcon className="h-4 w-4 flex-shrink-0" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="space-y-3">
+            {extraHeaderAction && <div className="px-1">{extraHeaderAction}</div>}
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all cursor-pointer"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Mobile Header Tabs Navigation */}
+        <div className="md:hidden border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md sticky top-16 z-30 py-2.5 px-4 flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
+                {user?.name?.[0]?.toUpperCase()}
+              </div>
+              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[120px]">{user?.name}</span>
+            </div>
+            {extraHeaderAction}
+          </div>
+          <div className="flex space-x-1 overflow-x-auto scrollbar-none py-1 border-t border-zinc-100 dark:border-zinc-800/60 pt-2">
+            {tabs.map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = activeTab === tab.id || (tab.id === 'listings' && (activeTab === 'add-food' || activeTab === 'edit-food'));
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabView)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                      : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40'
+                  }`}
+                >
+                  <TabIcon className="h-3.5 w-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main Content Pane */}
+        <main className="flex-1 md:pl-64 flex flex-col min-w-0">
+          <div className="flex-grow flex flex-col">
+            {children}
+          </div>
+        </main>
+
+      </div>
+    );
+  };
 
   if (user?.role === 'Student') {
     const studentFilteredFoods = getFilteredAvailableFoods();
     const activeClaims = reservedFoods.filter(f => f.status === 'Reserved');
     const pastCollections = reservedFoods.filter(f => f.status === 'Collected');
 
+    const studentTabs = [
+      { id: 'overview', label: 'Browse Food', icon: Utensils },
+      { id: 'reservations', label: 'My Reservations', icon: FileSpreadsheet },
+      { id: 'profile', label: 'My Profile', icon: User },
+    ];
+
     return (
-      <div className="flex-grow bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 transition-colors duration-300">
-        {/* Sub-Header Tabs */}
-        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 backdrop-blur-sm sticky top-16 z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-14">
-              <div className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none py-1">
-                {[
-                  { id: 'overview', label: 'Browse Food', icon: Utensils },
-                  { id: 'reservations', label: 'My Reservations', icon: FileSpreadsheet },
-                  { id: 'profile', label: 'My Profile', icon: User },
-                ].map(tab => {
-                  const TabIcon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as TabView)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                          : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40'
-                      }`}
-                    >
-                      <TabIcon className="h-4 w-4" />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {activeClaims.length > 0 && (
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                  <span className="text-xs font-bold text-amber-500 ml-2 hidden sm:inline">{activeClaims.length} Claim{activeClaims.length > 1 ? 's' : ''} Active</span>
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <AnimatePresence mode="wait">
+      <DashboardLayout
+        user={user}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={studentTabs}
+        onLogout={logout}
+        extraHeaderAction={
+          activeClaims.length > 0 ? (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wider">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping"></span>
+              {activeClaims.length} Claim{activeClaims.length > 1 ? 's' : ''} Active
+            </span>
+          ) : undefined
+        }
+      >
+        <AnimatePresence mode="wait">
             
             {/* Student Overview tab */}
             {activeTab === 'overview' && (
@@ -796,15 +890,13 @@ export const Dashboard = () => {
                     </div>
                     <div className="flex gap-4">
                       <motion.div 
-                        whileHover={{ y: -4 }}
-                        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-center min-w-[100px] shadow-sm"
+                        className="glass-panel apple-shadow interactive-card rounded-2xl p-4 text-center min-w-[100px]"
                       >
                         <span className="block text-2xl font-black text-emerald-500">{studentFilteredFoods.length}</span>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Available</span>
                       </motion.div>
                       <motion.div 
-                        whileHover={{ y: -4 }}
-                        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-center min-w-[100px] shadow-sm"
+                        className="glass-panel apple-shadow interactive-card rounded-2xl p-4 text-center min-w-[100px]"
                       >
                         <span className="block text-2xl font-black text-amber-500">{activeClaims.length}</span>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Reserved</span>
@@ -911,7 +1003,7 @@ export const Dashboard = () => {
                       return (
                         <div 
                           key={food._id}
-                          className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                          className="glass-panel apple-shadow interactive-card rounded-2xl overflow-hidden flex flex-col justify-between"
                         >
                           <div className="relative">
                             {food.image && (
@@ -1206,17 +1298,24 @@ export const Dashboard = () => {
             )}
 
           </AnimatePresence>
-        </div>
 
         {/* Food Details Modal Overlay */}
         <AnimatePresence>
           {selectedFoodDetails && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm"
+              onClick={() => setSelectedFoodDetails(null)}
+            >
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 340 }}
                 className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col justify-between"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div>
                   {selectedFoodDetails.image && (
@@ -1297,16 +1396,20 @@ export const Dashboard = () => {
                   </button>
                   <button
                     onClick={() => handleReserveFood(selectedFoodDetails._id)}
-                    className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer"
+                    disabled={actionLoadingIds.includes(selectedFoodDetails._id)}
+                    className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer flex items-center justify-center gap-1.5"
                   >
+                    {actionLoadingIds.includes(selectedFoodDetails._id) && (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    )}
                     Confirm Claim Reservation
                   </button>
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -1315,50 +1418,29 @@ export const Dashboard = () => {
     const activeClaims = reservedFoods.filter(f => f.status === 'Reserved');
     const pastPickups = reservedFoods.filter(f => f.status === 'Collected');
 
+    const ngoTabs = [
+      { id: 'overview', label: 'Browse Donations', icon: Utensils },
+      { id: 'reservations', label: 'My Donations', icon: FileSpreadsheet },
+      { id: 'profile', label: 'NGO Profile', icon: User },
+    ];
+
     return (
-      <div className="flex-grow bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 transition-colors duration-300">
-        {/* Sub-Header Tabs */}
-        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 backdrop-blur-sm sticky top-16 z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-14">
-              <div className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none py-1">
-                {[
-                  { id: 'overview', label: 'Browse Donations', icon: Utensils },
-                  { id: 'reservations', label: 'My Donations', icon: FileSpreadsheet },
-                  { id: 'profile', label: 'NGO Profile', icon: User },
-                ].map(tab => {
-                  const TabIcon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as TabView)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                          : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40'
-                      }`}
-                    >
-                      <TabIcon className="h-4 w-4" />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {activeClaims.length > 0 && (
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                  <span className="text-xs font-bold text-emerald-500 ml-2 hidden sm:inline">{activeClaims.length} Claim{activeClaims.length > 1 ? 's' : ''} Claimed</span>
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <AnimatePresence mode="wait">
+      <DashboardLayout
+        user={user}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={ngoTabs}
+        onLogout={logout}
+        extraHeaderAction={
+          activeClaims.length > 0 ? (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              {activeClaims.length} Claim{activeClaims.length > 1 ? 's' : ''} Claimed
+            </span>
+          ) : undefined
+        }
+      >
+        <AnimatePresence mode="wait">
             
             {/* NGO Overview tab */}
             {activeTab === 'overview' && (
@@ -1382,15 +1464,13 @@ export const Dashboard = () => {
                     </div>
                     <div className="flex gap-4">
                       <motion.div 
-                        whileHover={{ y: -4 }}
-                        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-center min-w-[100px] shadow-sm animate-fade-in"
+                        className="glass-panel apple-shadow interactive-card rounded-2xl p-4 text-center min-w-[100px]"
                       >
                         <span className="block text-2xl font-black text-emerald-500">{ngoFilteredFoods.length}</span>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Available Bulk</span>
                       </motion.div>
                       <motion.div 
-                        whileHover={{ y: -4 }}
-                        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-center min-w-[100px] shadow-sm"
+                        className="glass-panel apple-shadow interactive-card rounded-2xl p-4 text-center min-w-[100px]"
                       >
                         <span className="block text-2xl font-black text-amber-500">{activeClaims.length}</span>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Claims Active</span>
@@ -1497,7 +1577,7 @@ export const Dashboard = () => {
                       return (
                         <div 
                           key={food._id}
-                          className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                          className="glass-panel apple-shadow interactive-card rounded-2xl overflow-hidden flex flex-col justify-between"
                         >
                           <div className="relative">
                             {food.image && (
@@ -1792,17 +1872,24 @@ export const Dashboard = () => {
             )}
 
           </AnimatePresence>
-        </div>
 
         {/* Food Details Modal Overlay */}
         <AnimatePresence>
           {selectedFoodDetails && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm"
+              onClick={() => setSelectedFoodDetails(null)}
+            >
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 340 }}
                 className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col justify-between"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div>
                   {selectedFoodDetails.image && (
@@ -1889,16 +1976,20 @@ export const Dashboard = () => {
                   </button>
                   <button
                     onClick={() => handleReserveFood(selectedFoodDetails._id)}
-                    className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer"
+                    disabled={actionLoadingIds.includes(selectedFoodDetails._id)}
+                    className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer flex items-center justify-center gap-1.5"
                   >
+                    {actionLoadingIds.includes(selectedFoodDetails._id) && (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    )}
                     Confirm Claim Donation
                   </button>
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -1912,44 +2003,23 @@ export const Dashboard = () => {
     const reservedListings = systemListings.filter(l => l.status === 'Reserved').length;
     const collectedListings = systemListings.filter(l => l.status === 'Collected').length;
 
-    return (
-      <div className="flex-grow bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 transition-colors duration-300">
-        {/* Sub-Header Tabs */}
-        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 backdrop-blur-sm sticky top-16 z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-14">
-              <div className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none py-1">
-                {[
-                  { id: 'overview', label: 'Analytics', icon: LayoutDashboard },
-                  { id: 'users', label: 'User Management', icon: User },
-                  { id: 'listings', label: 'All Listings', icon: Utensils },
-                  { id: 'reports', label: 'System Reports', icon: FileSpreadsheet },
-                  { id: 'profile', label: 'Admin Profile', icon: User },
-                ].map(tab => {
-                  const TabIcon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as TabView)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                          : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40'
-                      }`}
-                    >
-                      <TabIcon className="h-4 w-4" />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
+    const adminTabs = [
+      { id: 'overview', label: 'Analytics', icon: LayoutDashboard },
+      { id: 'users', label: 'User Directory', icon: User },
+      { id: 'listings', label: 'System Listings', icon: Utensils },
+      { id: 'reports', label: 'System Reports', icon: FileSpreadsheet },
+      { id: 'profile', label: 'Admin Profile', icon: User },
+    ];
 
-        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <AnimatePresence mode="wait">
+    return (
+      <DashboardLayout
+        user={user}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={adminTabs}
+        onLogout={logout}
+      >
+        <AnimatePresence mode="wait">
             
             {/* Overview / Analytics tab */}
             {activeTab === 'overview' && (
@@ -1982,8 +2052,7 @@ export const Dashboard = () => {
                     return (
                       <motion.div 
                         key={idx} 
-                        whileHover={{ y: -6, scale: 1.01 }}
-                        className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm flex justify-between items-start cursor-default"
+                        className="glass-panel apple-shadow interactive-card rounded-2xl p-5 flex justify-between items-start cursor-default"
                       >
                         <div>
                           <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{stat.label}</p>
@@ -2419,17 +2488,24 @@ export const Dashboard = () => {
             )}
 
           </AnimatePresence>
-        </div>
 
         {/* User Account Deletion Confirmation Overlay */}
         <AnimatePresence>
           {adminConfirmDeleteUserId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm"
+              onClick={() => setAdminConfirmDeleteUserId(null)}
+            >
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.94, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 12 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 350 }}
                 className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 max-w-sm w-full p-6 rounded-2xl shadow-2xl text-center space-y-4"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-500">
                   <ShieldAlert className="h-6 w-6" />
@@ -2455,57 +2531,37 @@ export const Dashboard = () => {
                   </button>
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </DashboardLayout>
     );
   }
 
+  const kitchenTabs = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'listings', label: 'Food Listings', icon: Utensils },
+    { id: 'profile', label: 'Kitchen Profile', icon: User },
+  ];
+
   return (
-    <div className="flex-grow bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 transition-colors duration-300">
-      
-      {/* Sub-Header Tabs (Linear inspired tabs style) */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 backdrop-blur-sm sticky top-16 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14">
-            <div className="flex space-x-1 sm:space-x-4 overflow-x-auto scrollbar-none py-1">
-              {[
-                { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-                { id: 'listings', label: 'Food Listings', icon: Utensils },
-                { id: 'profile', label: 'Kitchen Profile', icon: User },
-              ].map(tab => {
-                const TabIcon = tab.icon;
-                const isActive = activeTab === tab.id || (tab.id === 'listings' && (activeTab === 'add-food' || activeTab === 'edit-food'));
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as TabView)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                        : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40'
-                    }`}
-                  >
-                    <TabIcon className="h-4 w-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={handleAddView}
-              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-500/10 transition-all cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Add Food</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <DashboardLayout
+      user={user}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      tabs={kitchenTabs}
+      onLogout={logout}
+      extraHeaderAction={
+        <button
+          onClick={handleAddView}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 transition-all cursor-pointer"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Add Food</span>
+        </button>
+      }
+    >
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {loadingListings && foods.length === 0 ? (
           /* Skeletons load states */
           <div className="space-y-8 animate-pulse">
@@ -2564,8 +2620,7 @@ export const Dashboard = () => {
                     return (
                       <motion.div 
                         key={idx} 
-                        whileHover={{ y: -6, scale: 1.01 }}
-                        className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex justify-between items-start cursor-default"
+                        className="glass-panel apple-shadow interactive-card rounded-2xl p-5 flex justify-between items-start cursor-default"
                       >
                         <div>
                           <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{stat.label}</p>
@@ -2801,7 +2856,7 @@ export const Dashboard = () => {
                       return (
                         <div 
                           key={food._id}
-                          className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                          className="glass-panel apple-shadow interactive-card rounded-2xl overflow-hidden flex flex-col justify-between"
                         >
                           <div className="relative">
                             {food.image && (
@@ -3336,12 +3391,20 @@ export const Dashboard = () => {
       {/* Delete Confirmation Modal Overlay */}
       <AnimatePresence>
         {deleteConfirmId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm"
+            onClick={() => setDeleteConfirmId(null)}
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 350 }}
               className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 max-w-sm w-full p-6 rounded-2xl shadow-2xl text-center space-y-4"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-500">
                 <ShieldAlert className="h-6 w-6" />
@@ -3367,9 +3430,37 @@ export const Dashboard = () => {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
-    </div>
+
+      {/* Floating Action Button (FAB) for Log Surplus */}
+      <AnimatePresence>
+        {(activeTab === 'overview' || activeTab === 'listings') && (
+          <motion.button
+            key="fab"
+            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 50 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setEditingFood(null);
+              setTitle('');
+              setDescription('');
+              setQuantity(1);
+              setUnit('servings');
+              setPickupLocation('');
+              setActiveTab('add-food');
+            }}
+            className="fixed bottom-6 right-6 z-40 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-bold p-4 rounded-full shadow-2xl flex items-center gap-2 hover:shadow-emerald-500/25 transition-all cursor-pointer fab-animate"
+            aria-label="Log Food Surplus"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="text-sm font-bold pr-1">Log Surplus</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </DashboardLayout>
   );
 };
