@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.js';
 import { useToast } from '../components/ui/Toast.js';
 import { motion } from 'framer-motion';
 import { Mail, Loader2, ArrowLeft, KeyRound, AlertCircle } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 export const ForgotPassword: React.FC = () => {
   const { forgotPassword, resetPassword } = useAuth();
@@ -144,20 +145,18 @@ export const ForgotPassword: React.FC = () => {
               />
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={resetLoading}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 shadow-md transition-all cursor-pointer"
+              className="w-full py-3 px-4 text-sm font-semibold rounded-xl shadow-md"
             >
               {resetLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Saving...</span>
-                </>
+                <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving…</span></>
               ) : (
                 <span>Update Password</span>
               )}
-            </button>
+            </Button>
           </form>
         ) : (
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -180,20 +179,18 @@ export const ForgotPassword: React.FC = () => {
               </div>
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 shadow-md transition-all cursor-pointer disabled:opacity-50"
+              className="w-full py-3 px-4 text-sm font-semibold rounded-xl shadow-md"
             >
               {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Generating Link...</span>
-                </>
+                <><Loader2 className="h-4 w-4 animate-spin" /><span>Generating Link…</span></>
               ) : (
                 <span>Send Reset Link</span>
               )}
-            </button>
+            </Button>
           </form>
         )}
 

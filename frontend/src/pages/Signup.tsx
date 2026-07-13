@@ -5,6 +5,7 @@ import { useToast } from '../components/ui/Toast.js';
 import type { UserRole } from '../types/auth.js';
 import { motion } from 'framer-motion';
 import { User, Mail, Lock, Briefcase, Loader2, ArrowRight } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 export const Signup: React.FC = () => {
   const { register } = useAuth();
@@ -155,23 +156,18 @@ export const Signup: React.FC = () => {
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 shadow-md transition-all cursor-pointer disabled:opacity-50"
+              className="w-full py-3 px-4 text-sm font-semibold rounded-xl shadow-md"
             >
               {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Registering...</span>
-                </>
+                <><Loader2 className="h-4 w-4 animate-spin" /><span>Registering…</span></>
               ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight className="h-4 w-4" />
-                </>
+                <><span>Create Account</span><ArrowRight className="h-4 w-4" /></>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </motion.div>
