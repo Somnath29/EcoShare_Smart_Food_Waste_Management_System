@@ -10,7 +10,7 @@ export const Unauthorized: React.FC = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="max-w-md w-full text-center p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl"
+        className="max-w-md w-full text-center p-8 glass-card rounded-2xl"
       >
         <div className="inline-flex items-center justify-center p-3 bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-full mb-6">
           <ShieldAlert className="h-10 w-10" />
