@@ -9,6 +9,10 @@ const app = express();
 
 // Security Middlewares
 app.use(helmet());
+
+// Debug: Check CLIENT_URL loaded from Render
+console.log('CLIENT_URL =', process.env.CLIENT_URL);
+
 app.use(
   cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -36,7 +40,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Wildcard API Route handler (404)
-app.use('*', (req: Request, res: Response, next: NextFunction) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     message: `Resource not found on this server: ${req.originalUrl}`,
