@@ -2631,7 +2631,7 @@ export const Dashboard = () => {
                       placeholder="Search surplus food..."
                       value={studentSearch}
                       onChange={e => setStudentSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="input-base pl-9 text-sm"
                     />
                   </div>
 
@@ -2640,7 +2640,7 @@ export const Dashboard = () => {
                     <select
                       value={studentCategory}
                       onChange={e => setStudentCategory(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="All">All Categories</option>
                       {categories.map(cat => (
@@ -2654,7 +2654,7 @@ export const Dashboard = () => {
                     <select
                       value={studentVegFilter}
                       onChange={e => setStudentVegFilter(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="All">All Diets (Veg / Non-Veg)</option>
                       <option value="Veg">Vegetarian Only</option>
@@ -2667,7 +2667,7 @@ export const Dashboard = () => {
                     <select
                       value={studentSortBy}
                       onChange={e => setStudentSortBy(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="newest">Sort: Newest First</option>
                       <option value="pickup">Sort: Pickup Time</option>
@@ -3279,7 +3279,7 @@ export const Dashboard = () => {
                       placeholder="Search bulk donations..."
                       value={studentSearch}
                       onChange={e => setStudentSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="input-base pl-9 text-sm"
                     />
                   </div>
 
@@ -3288,7 +3288,7 @@ export const Dashboard = () => {
                     <select
                       value={studentCategory}
                       onChange={e => setStudentCategory(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="All">All Categories</option>
                       {categories.map(cat => (
@@ -3302,7 +3302,7 @@ export const Dashboard = () => {
                     <select
                       value={studentVegFilter}
                       onChange={e => setStudentVegFilter(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="All">All Diets (Veg / Non-Veg)</option>
                       <option value="Veg">Vegetarian Only</option>
@@ -3315,7 +3315,7 @@ export const Dashboard = () => {
                     <select
                       value={studentSortBy}
                       onChange={e => setStudentSortBy(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="newest">Sort: Newest First</option>
                       <option value="pickup">Sort: Pickup Time</option>
@@ -4057,7 +4057,7 @@ export const Dashboard = () => {
                       placeholder="Search users by name or email..."
                       value={adminUserSearch}
                       onChange={e => setAdminUserSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="input-base pl-9 text-sm"
                     />
                   </div>
 
@@ -4066,7 +4066,7 @@ export const Dashboard = () => {
                     <select
                       value={adminUserRoleFilter}
                       onChange={e => setAdminUserRoleFilter(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="All">All Roles</option>
                       <option value="Admin">Admin</option>
@@ -4176,7 +4176,7 @@ export const Dashboard = () => {
                       placeholder="Search food by title..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="input-base pl-9 text-sm"
                     />
                   </div>
 
@@ -4185,7 +4185,7 @@ export const Dashboard = () => {
                     <select
                       value={statusFilter}
                       onChange={e => setStatusFilter(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="All">All Statuses</option>
                       <option value="Available">Available</option>
@@ -4200,7 +4200,7 @@ export const Dashboard = () => {
                     <select
                       value={sortBy}
                       onChange={e => setSortBy(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="newest">Newest First</option>
                       <option value="quantity-desc">Quantity: High to Low</option>
@@ -4767,7 +4767,7 @@ export const Dashboard = () => {
                       placeholder="Search listings..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="input-base pl-9 text-sm"
                     />
                   </div>
 
@@ -4776,7 +4776,7 @@ export const Dashboard = () => {
                     <select
                       value={categoryFilter}
                       onChange={e => setCategoryFilter(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="All">All Categories</option>
                       <option value="Cooked Meals">Cooked Meals</option>
@@ -4792,7 +4792,7 @@ export const Dashboard = () => {
                     <select
                       value={statusFilter}
                       onChange={e => setStatusFilter(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="All">All Statuses</option>
                       <option value="Available">Available</option>
@@ -4807,7 +4807,7 @@ export const Dashboard = () => {
                     <select
                       value={sortBy}
                       onChange={e => setSortBy(e.target.value)}
-                      className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="input-base text-sm cursor-pointer"
                     >
                       <option value="newest">Newest First</option>
                       <option value="oldest">Oldest First</option>
@@ -5030,7 +5030,7 @@ export const Dashboard = () => {
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         placeholder="e.g. Leftover Vegetable Biryani"
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                        className="input-base text-sm"
                       />
                     </div>
 
@@ -5042,7 +5042,7 @@ export const Dashboard = () => {
                       <select
                         value={category}
                         onChange={e => setCategory(e.target.value)}
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                        className="input-base text-sm cursor-pointer"
                       >
                         {categories.map(cat => (
                           <option key={cat} value={cat}>{cat}</option>
@@ -5092,7 +5092,7 @@ export const Dashboard = () => {
                         min="1"
                         value={quantity}
                         onChange={e => setQuantity(Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none"
+                        className="input-base text-sm"
                       />
                     </div>
 
@@ -5107,7 +5107,7 @@ export const Dashboard = () => {
                         value={unit}
                         onChange={e => setUnit(e.target.value)}
                         placeholder="e.g. servings, kg, boxes"
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none"
+                        className="input-base text-sm"
                       />
                     </div>
 
@@ -5121,7 +5121,7 @@ export const Dashboard = () => {
                         required
                         value={pickupStart}
                         onChange={e => setPickupStart(e.target.value)}
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                        className="input-base text-sm cursor-pointer"
                       />
                     </div>
 
@@ -5135,7 +5135,7 @@ export const Dashboard = () => {
                         required
                         value={pickupEnd}
                         onChange={e => setPickupEnd(e.target.value)}
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                        className="input-base text-sm cursor-pointer"
                       />
                     </div>
 
@@ -5149,7 +5149,7 @@ export const Dashboard = () => {
                         required
                         value={expiryDate}
                         onChange={e => setExpiryDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                        className="input-base text-sm cursor-pointer"
                       />
                     </div>
 
@@ -5163,7 +5163,7 @@ export const Dashboard = () => {
                         required
                         value={expiryTime}
                         onChange={e => setExpiryTime(e.target.value)}
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                        className="input-base text-sm cursor-pointer"
                       />
                     </div>
 
@@ -5182,7 +5182,7 @@ export const Dashboard = () => {
                           value={pickupLocation}
                           onChange={e => setPickupLocation(e.target.value)}
                           placeholder="e.g. Student Center, Room 102"
-                          className="w-full pl-9 pr-4 py-2.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                          className="input-base pl-9 text-sm"
                         />
                       </div>
                     </div>
@@ -5244,7 +5244,7 @@ export const Dashboard = () => {
                           value={imageUrl}
                           onChange={e => setImageUrl(e.target.value)}
                           placeholder="https://example.com/image.jpg"
-                          className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none"
+                          className="input-base text-sm"
                         />
                       )}
                     </div>
@@ -5258,7 +5258,7 @@ export const Dashboard = () => {
                         <select
                           value={editingFood.status}
                           onChange={e => setEditingFood({ ...editingFood, status: e.target.value })}
-                          className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none cursor-pointer"
+                          className="input-base text-sm cursor-pointer"
                         >
                           <option value="Available">Available</option>
                           <option value="Reserved">Reserved</option>
@@ -5279,7 +5279,7 @@ export const Dashboard = () => {
                         value={description}
                         onChange={e => setDescription(e.target.value)}
                         placeholder="Log instructions, allergen warnings, or food conditions..."
-                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-sm focus:outline-none"
+                        className="input-base text-sm"
                       />
                     </div>
                   </div>
