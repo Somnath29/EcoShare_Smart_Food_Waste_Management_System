@@ -134,11 +134,14 @@ erDiagram
 
 EcoShare's intelligent platform connects surplus food from campuses to NGOs, minimizing waste and maximizing community impact.
 
+
+
 <img width="1917" height="1086" alt="image" src="https://github.com/user-attachments/assets/600752dd-a12c-4991-9042-ff5b053370a5" />
 
 ##Photo 2 (DSA Features):
 
 Interactive DSA visualizations demonstrate how core algorithms power EcoShare's fast and efficient food redistribution system.
+
 
 
 🧠 Data Structures & Algorithms Used in Our webiste :- 
@@ -184,11 +187,14 @@ Performs fast searches on sorted food records and user data, reducing search tim
 Efficiently sorts large collections of food listings and donation history using a divide-and-conquer approach with an average time complexity of O(n log n).
 
 
+
+
 <img width="1917" height="1011" alt="Screenshot 2026-07-19 102200" src="https://github.com/user-attachments/assets/e9792daf-a66c-4f56-99c1-bdcc803f3dbc" />
 
 ##Photo 3 (Workflow):
 
 A step-by-step workflow shows how surplus food is matched, routed, and delivered efficiently using intelligent algorithms.
+
 
 <img width="1917" height="1093" alt="Screenshot 2026-07-19 104836" src="https://github.com/user-attachments/assets/fa953123-6b20-42ad-906d-63398a80ba9f" />
 
@@ -196,11 +202,16 @@ A step-by-step workflow shows how surplus food is matched, routed, and delivered
 
 The student dashboard enables users to browse, reserve, and track surplus food through a simple and interactive interface.
 
+
+
+
 <img width="1917" height="1091" alt="Screenshot 2026-07-19 104846" src="https://github.com/user-attachments/assets/f1eed5be-3b1a-4e3b-88ab-20a07395c613" />
 
 ##Photo 5 (DSA Learning Module):
 
 The DSA Learning module provides interactive algorithm visualizations to explain how search and optimization power food redistribution.
+
+
 
 <img width="1917" height="1088" alt="Screenshot 2026-07-19 105149" src="https://github.com/user-attachments/assets/15e9b324-8c6e-4fd9-bc37-84eb848f49ba" />
 
@@ -208,17 +219,22 @@ The DSA Learning module provides interactive algorithm visualizations to explain
 
 The kitchen staff dashboard allows users to log, manage, and monitor surplus food listings for efficient distribution.
 
+
+
 <img width="1916" height="1088" alt="image" src="https://github.com/user-attachments/assets/84f0ba8e-6b2b-4229-bd84-186d6b5e9d72" />
 
 ##Photo 7 (Administrator Dashboard):
 
 The administrator dashboard provides real-time monitoring of users, food listings, system performance, and overall platform analytics.
 
+
 <img width="1916" height="1093" alt="image" src="https://github.com/user-attachments/assets/4cb125cc-8821-4c26-b865-378bbb89960f" />
 
 ##Photo 8 (DSA Learning Center):
 
 The DSA Learning Center offers interactive simulations to help users understand algorithms used in EcoShare's food redistribution system.
+
+
 
 <img width="1917" height="1091" alt="image" src="https://github.com/user-attachments/assets/186c1823-2b6f-474b-ab8b-8a8a3e59a31b" />
 
@@ -227,6 +243,7 @@ Photo 9 (AI Decision Center):
 
 The AI Decision Center intelligently recommends the best NGO and delivery route using Greedy, Dijkstra, and Priority Queue algorithms.
  
+
  
  ##website link:
 [Visit wesbite]( https://eco-share-smart-food-waste-manageme.vercel.app/)
@@ -236,6 +253,3 @@ The AI Decision Center intelligently recommends the best NGO and delivery route 
 
 Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
 
-## 📝 License
-
-This project is MIT licensed. 
