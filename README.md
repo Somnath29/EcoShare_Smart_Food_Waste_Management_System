@@ -139,6 +139,9 @@ erDiagram
 
 <img width="1917" height="1088" alt="Screenshot 2026-07-19 105149" src="https://github.com/user-attachments/assets/15e9b324-8c6e-4fd9-bc37-84eb848f49ba" />
 <img width="1916" height="1088" alt="image" src="https://github.com/user-attachments/assets/84f0ba8e-6b2b-4229-bd84-186d6b5e9d72" />
+<img width="1916" height="1093" alt="image" src="https://github.com/user-attachments/assets/4cb125cc-8821-4c26-b865-378bbb89960f" />
+<img width="1917" height="1091" alt="image" src="https://github.com/user-attachments/assets/186c1823-2b6f-474b-ab8b-8a8a3e59a31b" />
+
 
 
 
