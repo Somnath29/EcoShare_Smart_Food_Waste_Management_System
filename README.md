@@ -141,6 +141,49 @@ EcoShare's intelligent platform connects surplus food from campuses to NGOs, min
 Interactive DSA visualizations demonstrate how core algorithms power EcoShare's fast and efficient food redistribution system.
 
 
+🧠 Data Structures & Algorithms Used in Our webiste :- 
+
+🔹 Hash Map
+
+Stores and retrieves user, NGO, and food donation records efficiently, enabling near O(1) average-time lookup and insertion.
+
+🔹 Queue
+
+Processes food donation requests in First-In-First-Out (FIFO) order, ensuring fair and organized request handling.
+
+🔹 Priority Queue
+
+Ranks available food donations based on urgency and expiry time so that high-priority donations are processed first.
+
+🔹 Min Heap
+
+Implements the Priority Queue, allowing the system to quickly identify donations with the earliest expiry time in O(log n) time.
+
+🔹 Graph
+
+Represents the network of donors, NGOs, and distribution points, enabling efficient route planning and resource connectivity.
+
+🔹 Dijkstra's Algorithm
+
+Computes the shortest path between food donors and nearby NGOs, reducing delivery time and transportation effort.
+
+🔹 Greedy Algorithm
+
+Selects the most suitable donation assignment by considering factors such as proximity and urgency, maximizing redistribution efficiency.
+
+🔹 Merge Sort
+
+Sorts food donation records by attributes such as expiry date and donation time with a guaranteed O(n log n) time complexity.
+
+🔹 Binary Search
+
+Performs fast searches on sorted food records and user data, reducing search time to O(log n).
+
+🔹 Quick Sort
+
+Efficiently sorts large collections of food listings and donation history using a divide-and-conquer approach with an average time complexity of O(n log n).
+
+
 <img width="1917" height="1011" alt="Screenshot 2026-07-19 102200" src="https://github.com/user-attachments/assets/e9792daf-a66c-4f56-99c1-bdcc803f3dbc" />
 
 ##Photo 3 (Workflow):
