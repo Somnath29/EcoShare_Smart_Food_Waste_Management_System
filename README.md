@@ -134,6 +134,10 @@ erDiagram
 <img width="1917" height="1091" alt="Screenshot 2026-07-19 102139" src="https://github.com/user-attachments/assets/c1a73e0e-0542-4849-97e4-0094c33f3aab" />
 <img width="1917" height="1011" alt="Screenshot 2026-07-19 102200" src="https://github.com/user-attachments/assets/e9792daf-a66c-4f56-99c1-bdcc803f3dbc" />
 
+<img width="1917" height="1093" alt="Screenshot 2026-07-19 104836" src="https://github.com/user-attachments/assets/fa953123-6b20-42ad-906d-63398a80ba9f" />
+<img width="1917" height="1091" alt="Screenshot 2026-07-19 104846" src="https://github.com/user-attachments/assets/f1eed5be-3b1a-4e3b-88ab-20a07395c613" />
+
+<img width="1917" height="1088" alt="Screenshot 2026-07-19 105149" src="https://github.com/user-attachments/assets/15e9b324-8c6e-4fd9-bc37-84eb848f49ba" />
 
 
 
