@@ -67,7 +67,7 @@ erDiagram
         ObjectId receiverId FK
         String foodType
         Number quantity
-        Date expiryDate
+        Date expirydate
         String status "Available, Claimed, Completed"
     }
 ```
@@ -142,4 +142,4 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 
 ## 📝 License
 
-This project is MIT licensed.
+This project is MIT licensed. 
