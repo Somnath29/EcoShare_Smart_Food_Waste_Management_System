@@ -1,5 +1,15 @@
 🌱 EcoShare – Smart Food Waste Management System
 
+Click here to visit our webiste :- https://eco-share-smart-food-waste-manageme.vercel.app/
+
+TEAM – MEMBERS :-
+
+1. RONIT SAHA – 12400705 
+2. SOMNATH BHASKAR-12401921 
+3. PRATEEK KUMAR PAL-12418501
+4. KONDIPATI HARSHA VARDHAN-12409535 
+5. BEEDALA PAVAN KUMAR REDDY-12406337
+
 EcoShare is a comprehensive, full-stack platform designed to bridge the gap between food surplus and food scarcity. By connecting Restaurants, Students, NGOs, and Administrators, the system utilizes intelligent redistribution and real-time alerts to mitigate food waste at the source and efficiently allocate unavoidable surplus.
 
 ## 🚀 Features by Role
