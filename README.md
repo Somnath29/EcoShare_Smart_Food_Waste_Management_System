@@ -1,4 +1,4 @@
-<img width="1917" height="1086" alt="image" src="https://github.com/user-attachments/assets/56ce50fb-4948-452d-8e92-670702226674" /># 🌱 EcoShare – Smart Food Waste Management System
+🌱 EcoShare – Smart Food Waste Management System
 
 EcoShare is a comprehensive, full-stack platform designed to bridge the gap between food surplus and food scarcity. By connecting Restaurants, Students, NGOs, and Administrators, the system utilizes intelligent redistribution and real-time alerts to mitigate food waste at the source and efficiently allocate unavoidable surplus.
 
