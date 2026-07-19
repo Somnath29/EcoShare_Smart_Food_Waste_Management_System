@@ -1,4 +1,13 @@
-🌱 EcoShare – Smart Food Waste Management System
+<h1 align="center">🌱 EcoShare</h1>
+
+<h3 align="center">
+Smart Food Waste Management & Redistribution System
+</h3>
+
+<p align="center">
+A DSA-powered MERN web application that connects food donors with NGOs to reduce food waste through intelligent and efficient redistribution.
+</p>
+
 
 Click here to visit our webiste :- https://eco-share-smart-food-waste-manageme.vercel.app/
 
