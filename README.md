@@ -1,4 +1,4 @@
-# 🌱 EcoShare – Smart Food Waste Management System
+<img width="1917" height="1086" alt="image" src="https://github.com/user-attachments/assets/56ce50fb-4948-452d-8e92-670702226674" /># 🌱 EcoShare – Smart Food Waste Management System
 
 EcoShare is a comprehensive, full-stack platform designed to bridge the gap between food surplus and food scarcity. By connecting Restaurants, Students, NGOs, and Administrators, the system utilizes intelligent redistribution and real-time alerts to mitigate food waste at the source and efficiently allocate unavoidable surplus.
 
@@ -129,15 +129,14 @@ erDiagram
 
 
 <img width="1917" height="1090" alt="Screenshot 2026-07-19 101327" src="https://github.com/user-attachments/assets/60e608a2-21cb-4647-b69d-183e886c003c" />
+<img width="1917" height="1086" alt="image" src="https://github.com/user-attachments/assets/600752dd-a12c-4991-9042-ff5b053370a5" />
 
 <img width="1917" height="1091" alt="Screenshot 2026-07-19 102139" src="https://github.com/user-attachments/assets/c1a73e0e-0542-4849-97e4-0094c33f3aab" />
 <img width="1917" height="1011" alt="Screenshot 2026-07-19 102200" src="https://github.com/user-attachments/assets/e9792daf-a66c-4f56-99c1-bdcc803f3dbc" />
 
 
 
-| Login Page | Donor Dashboard |
-| :--- | :--- |
-| https://eco-share-smart-food-waste-manageme.vercel.app/login | https://eco-share-smart-food-waste-manageme.vercel.app/dashboard |
+
 
 
 
