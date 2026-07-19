@@ -128,7 +128,8 @@ erDiagram
 
 
 
-<img width="1917" height="1092" alt="Screenshot 2026-07-19 101412" src="https://github.com/user-attachments/assets/7cd00a02-baf4-4629-94f2-c6f181da9de8" />
+<img width="1917" height="1090" alt="Screenshot 2026-07-19 101327" src="https://github.com/user-attachments/assets/60e608a2-21cb-4647-b69d-183e886c003c" />
+
 <img width="1917" height="1091" alt="Screenshot 2026-07-19 102139" src="https://github.com/user-attachments/assets/c1a73e0e-0542-4849-97e4-0094c33f3aab" />
 <img width="1917" height="1011" alt="Screenshot 2026-07-19 102200" src="https://github.com/user-attachments/assets/e9792daf-a66c-4f56-99c1-bdcc803f3dbc" />
 
