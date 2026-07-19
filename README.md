@@ -138,6 +138,8 @@ erDiagram
 <img width="1917" height="1091" alt="Screenshot 2026-07-19 104846" src="https://github.com/user-attachments/assets/f1eed5be-3b1a-4e3b-88ab-20a07395c613" />
 
 <img width="1917" height="1088" alt="Screenshot 2026-07-19 105149" src="https://github.com/user-attachments/assets/15e9b324-8c6e-4fd9-bc37-84eb848f49ba" />
+<img width="1916" height="1088" alt="image" src="https://github.com/user-attachments/assets/84f0ba8e-6b2b-4229-bd84-186d6b5e9d72" />
+
 
 
 
