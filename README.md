@@ -126,15 +126,16 @@ erDiagram
 
 ## 📸 Screenshots
 
-*(Replace these placeholder links with actual screenshots of your application)*
+<img width="1917" height="1092" alt="image" src="https://github.com/user-attachments/assets/c4a119b1-bcce-4fc4-8c30-05258a4d99cf" />
+![Uploading image.png…]()
+
+
 
 | Login Page | Donor Dashboard |
 | :--- | :--- |
-| [Login UI](#) | [Donor Portal](#) |
+| https://eco-share-smart-food-waste-manageme.vercel.app/login | https://eco-share-smart-food-waste-manageme.vercel.app/dashboard |
 
-| Available Food Feed | NGO/Student Dashboard |
-| :--- | :--- |
-| [Surplus Feed](#) | [Receiver Portal](#) |
+
 
 ## 🤝 Contributing
 
