@@ -126,8 +126,10 @@ erDiagram
 
 ## 📸 Screenshots
 
-<img width="1917" height="1092" alt="image" src="https://github.com/user-attachments/assets/c4a119b1-bcce-4fc4-8c30-05258a4d99cf" />
-![Uploading image.png…]()
+
+
+<img width="1917" height="1092" alt="Screenshot 2026-07-19 101412" src="https://github.com/user-attachments/assets/7cd00a02-baf4-4629-94f2-c6f181da9de8" />
+<img width="1920" height="1200" alt="Screenshot (226)" src="https://github.com/user-attachments/assets/2b33098e-3691-442c-9b1a-c39f45e42bf8" />
 
 
 
