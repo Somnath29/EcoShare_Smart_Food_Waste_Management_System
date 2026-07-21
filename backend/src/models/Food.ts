@@ -63,6 +63,10 @@ const foodSchema = new Schema<IFood, FoodModel>(
       },
       default: 'Available',
     },
+    isForDonation: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',

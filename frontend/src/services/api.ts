@@ -81,9 +81,10 @@ export const deleteFoodApi = async (id: string) => {
   });
 };
 
-export const reserveFoodApi = async (id: string) => {
+export const reserveFoodApi = async (id: string, quantity?: number) => {
   return apiRequest(`/foods/${id}/reserve`, {
     method: 'PATCH',
+    body: quantity ? { quantity } : undefined,
   });
 };
 

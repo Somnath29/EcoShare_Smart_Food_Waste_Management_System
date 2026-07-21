@@ -13,6 +13,7 @@ export interface IFood extends Document {
   latitude: number;
   longitude: number;
   image?: string;
+  isForDonation?: boolean;
   status: FoodStatus;
   createdBy: Types.ObjectId;
   reservedBy?: Types.ObjectId;

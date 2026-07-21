@@ -1998,6 +1998,8 @@ export const Dashboard = () => {
   const [pickupEnd, setPickupEnd] = useState('15:00');
   const [expiryDate, setExpiryDate] = useState('');
   const [expiryTime, setExpiryTime] = useState('18:00');
+  const [isForDonation, setIsForDonation] = useState(false);
+  const [claimQuantity, setClaimQuantity] = useState(1);
   const [pickupLocation, setPickupLocation] = useState('');
   const [imageOption, setImageOption] = useState('select'); // 'select' or 'url'
   const [imageUrl, setImageUrl] = useState('');
@@ -2020,6 +2022,12 @@ export const Dashboard = () => {
   const [loadingReserved, setLoadingReserved] = useState(true);
   const [selectedFoodDetails, setSelectedFoodDetails] = useState<any | null>(null);
   const [cancelledHistory, setCancelledHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (selectedFoodDetails) {
+      setClaimQuantity(1);
+    }
+  }, [selectedFoodDetails]);
 
   // Student Filter/Sort States
   const [studentSearch, setStudentSearch] = useState('');
@@ -2199,14 +2207,14 @@ export const Dashboard = () => {
   };
 
   // Student specific handlers
-  const handleReserveFood = async (foodId: string) => {
+  const handleReserveFood = async (foodId: string, quantity?: number) => {
     setActionLoadingIds(prev => [...prev, foodId]);
     try {
-      const data = await reserveFoodApi(foodId);
+      const data = await reserveFoodApi(foodId, quantity);
       if (data.success && data.food) {
         toast('success', 'Food listing reserved successfully! Check details for pickup instructions.');
-        // Remove from available local state immediately
-        setAvailableFoods(prev => prev.filter(item => item._id !== foodId));
+        // Reload available foods to reflect partial claim deductions
+        loadAvailableFoods();
         // Add to reserved list immediately
         setReservedFoods(prev => [data.food, ...prev]);
         // Close modal
@@ -2307,6 +2315,7 @@ export const Dashboard = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     setExpiryDate(tomorrow.toISOString().split('T')[0]);
     setExpiryTime('18:00');
+    setIsForDonation(false);
     
     setPickupLocation('');
     setImageOption('select');
@@ -2364,6 +2373,7 @@ export const Dashboard = () => {
     setExpiryTime(`${pad(expDate.getHours())}:${pad(expDate.getMinutes())}`);
     
     setPickupLocation(food.pickupLocation);
+    setIsForDonation(food.isForDonation || false);
     
     // Check if image matches stock
     const isStock = Object.values(stockImages).includes(food.image || '');
@@ -2415,6 +2425,7 @@ export const Dashboard = () => {
         latitude: mockLatitude,
         longitude: mockLongitude,
         image: finalImage,
+        isForDonation,
       };
 
       let res;
@@ -3117,6 +3128,19 @@ export const Dashboard = () => {
                           {selectedFoodDetails.quantity} {selectedFoodDetails.unit}
                         </span>
                       </div>
+                      <div className="grid grid-cols-3 text-xs leading-relaxed items-center">
+                        <span className="text-zinc-400 font-medium">Quantity to Claim</span>
+                        <span className="col-span-2">
+                          <input 
+                            type="number" 
+                            min="1" 
+                            max={selectedFoodDetails.quantity} 
+                            value={claimQuantity} 
+                            onChange={e => setClaimQuantity(Number(e.target.value))}
+                            className="input-base text-xs w-24 p-1 bg-zinc-50 dark:bg-zinc-800/50"
+                          />
+                        </span>
+                      </div>
                       <div className="grid grid-cols-3 text-xs leading-relaxed">
                         <span className="text-zinc-400 font-medium">Pickup Address</span>
                         <span className="col-span-2 text-zinc-700 dark:text-zinc-300 font-medium inline-flex items-center gap-1">
@@ -3151,7 +3175,7 @@ export const Dashboard = () => {
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleReserveFood(selectedFoodDetails._id)}
+                    onClick={() => handleReserveFood(selectedFoodDetails._id, claimQuantity)}
                     disabled={actionLoadingIds.includes(selectedFoodDetails._id)}
                     className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer flex items-center justify-center gap-1.5"
                   >
@@ -3771,6 +3795,19 @@ export const Dashboard = () => {
                           {selectedFoodDetails.quantity} {selectedFoodDetails.unit}
                         </span>
                       </div>
+                      <div className="grid grid-cols-3 text-xs leading-relaxed items-center">
+                        <span className="text-zinc-400 font-medium">Quantity to Claim</span>
+                        <span className="col-span-2">
+                          <input 
+                            type="number" 
+                            min="1" 
+                            max={selectedFoodDetails.quantity} 
+                            value={claimQuantity} 
+                            onChange={e => setClaimQuantity(Number(e.target.value))}
+                            className="input-base text-xs w-24 p-1 bg-zinc-50 dark:bg-zinc-800/50"
+                          />
+                        </span>
+                      </div>
                       <div className="grid grid-cols-3 text-xs leading-relaxed">
                         <span className="text-zinc-400 font-medium">Pickup Address</span>
                         <span className="col-span-2 text-zinc-700 dark:text-zinc-300 font-medium inline-flex items-center gap-1">
@@ -3805,7 +3842,7 @@ export const Dashboard = () => {
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleReserveFood(selectedFoodDetails._id)}
+                    onClick={() => handleReserveFood(selectedFoodDetails._id, claimQuantity)}
                     disabled={actionLoadingIds.includes(selectedFoodDetails._id)}
                     className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer flex items-center justify-center gap-1.5"
                   >
@@ -5183,6 +5220,22 @@ export const Dashboard = () => {
                           className="input-base pl-9 text-sm"
                         />
                       </div>
+                    </div>
+
+                    {/* For Donation Checkbox */}
+                    <div className="sm:col-span-2">
+                      <label className="flex items-center gap-3 p-4 border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-xl cursor-pointer hover:bg-emerald-500/10 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={isForDonation}
+                          onChange={e => setIsForDonation(e.target.checked)}
+                          className="h-5 w-5 text-emerald-500 rounded border-emerald-500/30 focus:ring-emerald-500/50"
+                        />
+                        <div>
+                          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Put food for donation to NGOs</p>
+                          <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">Enable this to make this food exclusively available for NGOs immediately.</p>
+                        </div>
+                      </label>
                     </div>
 
                     {/* Image Options */}

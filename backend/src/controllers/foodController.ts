@@ -28,6 +28,7 @@ export const createFood = async (
       longitude,
       image,
       status,
+      isForDonation,
     } = req.body;
 
     const food = await Food.create({
@@ -42,6 +43,7 @@ export const createFood = async (
       longitude,
       image,
       status: status || 'Available',
+      isForDonation: isForDonation || false,
       createdBy: req.user._id,
     });
 
@@ -78,6 +80,16 @@ export const getAllFoods = async (
 
     if (reservedBy) {
       query.reservedBy = reservedBy;
+    }
+
+    if (req.user?.role === 'Student') {
+      query.isForDonation = { $ne: true };
+      query.expiryTime = { $gt: new Date() };
+    } else if (req.user?.role === 'NGO') {
+      query.$or = [
+        { isForDonation: true },
+        { expiryTime: { $lte: new Date() } }
+      ];
     }
 
     // Return foods populated with creator's name and email
@@ -258,14 +270,52 @@ export const reserveFood = async (
       return;
     }
 
-    // Set reservedBy and status
-    food.status = 'Reserved';
-    food.reservedBy = req.user._id;
+    const { quantity } = req.body;
+    let reservedFoodId = id;
 
-    await food.save();
+    if (quantity !== undefined) {
+      const requestedQuantity = Number(quantity);
+      if (isNaN(requestedQuantity) || requestedQuantity <= 0) {
+        res.status(400).json({ success: false, message: 'Invalid quantity requested.' });
+        return;
+      }
+      if (requestedQuantity > food.quantity) {
+        res.status(400).json({ success: false, message: 'Requested quantity exceeds available quantity.' });
+        return;
+      }
+      
+      if (requestedQuantity < food.quantity) {
+        // Partial reservation
+        food.quantity -= requestedQuantity;
+        // Automatically donate the remaining quantity to NGOs
+        food.isForDonation = true;
+        await food.save();
+        
+        const cloneData = food.toObject();
+        delete cloneData._id;
+        delete cloneData.createdAt;
+        delete cloneData.updatedAt;
+        cloneData.quantity = requestedQuantity;
+        cloneData.status = 'Reserved';
+        cloneData.reservedBy = req.user._id as any;
+        
+        const newReservedFood = await Food.create(cloneData);
+        reservedFoodId = newReservedFood._id.toString();
+      } else {
+        // Full reservation
+        food.status = 'Reserved';
+        food.reservedBy = req.user._id as any;
+        await food.save();
+      }
+    } else {
+      // Fallback if quantity is not provided (legacy behavior)
+      food.status = 'Reserved';
+      food.reservedBy = req.user._id as any;
+      await food.save();
+    }
 
     // Populate creator detail
-    const updatedFood = await Food.findById(id)
+    const updatedFood = await Food.findById(reservedFoodId)
       .populate('createdBy', 'name email role')
       .populate('reservedBy', 'name email role');
 

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 export const validateCreateFood = (req: Request, res: Response, next: NextFunction): void => {
-  const { title, description, category, quantity, unit, expiryTime, pickupLocation, latitude, longitude, image, status } = req.body;
+  const { title, description, category, quantity, unit, expiryTime, pickupLocation, latitude, longitude, image, status, isForDonation } = req.body;
   const errors: string[] = [];
 
   if (!title || typeof title !== 'string' || title.trim() === '') {
@@ -46,6 +46,10 @@ export const validateCreateFood = (req: Request, res: Response, next: NextFuncti
     errors.push('Image must be a string URL');
   }
 
+  if (isForDonation !== undefined && typeof isForDonation !== 'boolean') {
+    errors.push('isForDonation must be a boolean');
+  }
+
   const validStatuses = ['Available', 'Reserved', 'Collected', 'Expired'];
   if (status && !validStatuses.includes(status)) {
     errors.push(`Status must be one of: ${validStatuses.join(', ')}`);
@@ -64,7 +68,7 @@ export const validateCreateFood = (req: Request, res: Response, next: NextFuncti
 };
 
 export const validateUpdateFood = (req: Request, res: Response, next: NextFunction): void => {
-  const { title, description, category, quantity, unit, expiryTime, pickupLocation, latitude, longitude, image, status } = req.body;
+  const { title, description, category, quantity, unit, expiryTime, pickupLocation, latitude, longitude, image, status, isForDonation } = req.body;
   const errors: string[] = [];
 
   if (title !== undefined && (typeof title !== 'string' || title.trim() === '')) {
@@ -109,6 +113,10 @@ export const validateUpdateFood = (req: Request, res: Response, next: NextFuncti
 
   if (image !== undefined && typeof image !== 'string') {
     errors.push('Image must be a string URL');
+  }
+
+  if (isForDonation !== undefined && typeof isForDonation !== 'boolean') {
+    errors.push('isForDonation must be a boolean');
   }
 
   const validStatuses = ['Available', 'Reserved', 'Collected', 'Expired'];
