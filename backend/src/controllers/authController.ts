@@ -12,6 +12,14 @@ export const register = async (
   try {
     const { name, email, password, role } = req.body;
 
+    if (role === 'Admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Registration as Admin is restricted. Please sign in using the pre-configured Administrator credentials.',
+      });
+      return;
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -240,10 +248,10 @@ export const updateUserRole = async (
     const { id } = req.params;
     const { role } = req.body;
 
-    if (!['Student', 'Kitchen Staff', 'NGO', 'Volunteer', 'Admin'].includes(role)) {
+    if (!['Student', 'Kitchen Staff', 'NGO', 'Volunteer'].includes(role)) {
       res.status(400).json({
         success: false,
-        message: 'Invalid role specified',
+        message: 'Invalid role specified. Admin role cannot be assigned.',
       });
       return;
     }

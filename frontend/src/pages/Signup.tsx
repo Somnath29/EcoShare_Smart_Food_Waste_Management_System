@@ -46,7 +46,7 @@ export const Signup: React.FC = () => {
     }
   };
 
-  const rolesList: UserRole[] = ['Student', 'Kitchen Staff', 'NGO', 'Volunteer', 'Admin'];
+  const rolesList: UserRole[] = ['Student', 'Kitchen Staff', 'NGO', 'Volunteer'];
 
   return (
     <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden transition-colors duration-300">

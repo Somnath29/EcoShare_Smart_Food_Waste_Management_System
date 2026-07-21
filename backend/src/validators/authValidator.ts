@@ -18,9 +18,13 @@ export const validateRegister = (req: Request, res: Response, next: NextFunction
     errors.push('Password is required and must be at least 6 characters');
   }
 
-  const validRoles = ['Student', 'Kitchen Staff', 'NGO', 'Volunteer', 'Admin'];
-  if (!role || !validRoles.includes(role)) {
-    errors.push(`Role is required and must be one of: ${validRoles.join(', ')}`);
+  if (role === 'Admin') {
+    errors.push('Registration as Admin is restricted. Please sign in using the dedicated Administrator credentials.');
+  } else {
+    const validRoles = ['Student', 'Kitchen Staff', 'NGO', 'Volunteer'];
+    if (!role || !validRoles.includes(role)) {
+      errors.push(`Role is required and must be one of: ${validRoles.join(', ')}`);
+    }
   }
 
   if (errors.length > 0) {

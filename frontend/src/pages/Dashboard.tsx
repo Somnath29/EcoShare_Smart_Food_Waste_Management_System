@@ -4147,18 +4147,23 @@ export const Dashboard = () => {
                               <td className="p-4 text-xs text-zinc-500 font-mono">{usr.email}</td>
                               <td className="p-4 text-xs text-zinc-455">{new Date(usr.createdAt).toLocaleDateString()}</td>
                               <td className="p-4">
-                                <select
-                                  value={usr.role}
-                                  onChange={e => handleUpdateUserRole(usr._id, e.target.value)}
-                                  disabled={usr._id === user._id}
-                                  className="px-2.5 py-1 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer disabled:opacity-50"
-                                >
-                                  <option value="Student">Student</option>
-                                  <option value="Kitchen Staff">Kitchen Staff</option>
-                                  <option value="NGO">NGO</option>
-                                  <option value="Volunteer">Volunteer</option>
-                                  <option value="Admin">Admin</option>
-                                </select>
+                                {usr.role === 'Admin' ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 rounded-xl text-xs font-bold">
+                                    <ShieldAlert className="h-3.5 w-3.5" />
+                                    Admin
+                                  </span>
+                                ) : (
+                                  <select
+                                    value={usr.role}
+                                    onChange={e => handleUpdateUserRole(usr._id, e.target.value)}
+                                    className="px-2.5 py-1 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
+                                  >
+                                    <option value="Student">Student</option>
+                                    <option value="Kitchen Staff">Kitchen Staff</option>
+                                    <option value="NGO">NGO</option>
+                                    <option value="Volunteer">Volunteer</option>
+                                  </select>
+                                )}
                               </td>
                               <td className="p-4 text-right">
                                 <button
