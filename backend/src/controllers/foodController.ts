@@ -287,8 +287,6 @@ export const reserveFood = async (
       if (requestedQuantity < food.quantity) {
         // Partial reservation
         food.quantity -= requestedQuantity;
-        // Automatically donate the remaining quantity to NGOs
-        food.isForDonation = true;
         await food.save();
         
         const cloneData = food.toObject();

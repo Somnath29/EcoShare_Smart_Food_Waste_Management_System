@@ -1,0 +1,1 @@
+const mongoose = require('mongoose'); (async () => { try { await mongoose.connect('mongodb://localhost:27017/food_waste_db'); const db = mongoose.connection; const all = await db.collection('foods').find().sort({createdAt: -1}).limit(5).toArray(); console.log(JSON.stringify(all, null, 2)); mongoose.disconnect(); } catch(e) { console.error(e); } })();
