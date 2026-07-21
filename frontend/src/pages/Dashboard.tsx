@@ -111,7 +111,7 @@ const MiniAreaChart: React.FC<{ data: number[]; title: string; subtitle: string;
   const linePath = `M ${points}`;
 
   return (
-    <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-full">
+    <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
       <div>
         <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 leading-tight">{title}</h4>
         <p className="text-[11px] text-zinc-450 mt-0.5">{subtitle}</p>
@@ -198,10 +198,10 @@ const DashboardLayout: React.FC<{
   onPresentationOpen?: () => void;
 }> = ({ user, activeTab, setActiveTab, tabs, children, onLogout, extraHeaderAction, onPresentationOpen }) => {
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col md:flex-row bg-zinc-50/40 dark:bg-zinc-950/40 transition-colors duration-300 relative">
+    <div className="flex-grow flex flex-col md:flex-row bg-zinc-50/40 dark:bg-zinc-950/40 transition-colors duration-300 relative w-full">
       
       {/* Desktop Side Navigation */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-16 md:left-0 md:bg-white dark:md:bg-zinc-900 border-r border-zinc-200/50 dark:border-zinc-800/50 z-20 justify-between py-6 px-4">
+      <aside className="hidden md:flex md:w-64 md:flex-col md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-y-auto md:bg-white dark:md:bg-zinc-900 border-r border-zinc-200/50 dark:border-zinc-800/50 z-20 justify-between py-6 px-4">
         <div className="space-y-6">
           {/* User Profile Card */}
           <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-150 dark:border-zinc-800/50 flex items-center gap-3">
@@ -305,7 +305,7 @@ const DashboardLayout: React.FC<{
       </div>
 
       {/* Main Content Pane */}
-      <main className="flex-1 md:pl-64 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0">
         <div className="flex-grow flex flex-col">
           {children}
         </div>
@@ -2117,7 +2117,7 @@ export const Dashboard = () => {
 
   useEffect(() => {
     if (!user) return;
-    if (user.role === 'Student') {
+    if (user.role === 'Student' || user.role === 'NGO') {
       loadAvailableFoods();
       loadReservedFoods();
       
@@ -4526,7 +4526,7 @@ export const Dashboard = () => {
                 </div>
 
                 {/* Upgraded Dashboard KPI Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {[
                     { label: 'Total Listings', value: totalListings, icon: FileSpreadsheet, color: 'text-zinc-500 bg-zinc-500/10' },
                     { label: 'Active Listings', value: activeListings, icon: Clock, color: 'text-emerald-500 bg-emerald-500/10' },
@@ -4537,13 +4537,13 @@ export const Dashboard = () => {
                     return (
                       <motion.div 
                         key={idx} 
-                        className="glass-panel apple-shadow interactive-card rounded-2xl p-5 flex justify-between items-start cursor-default"
+                        className="glass-panel apple-shadow interactive-card rounded-2xl p-5 flex justify-between items-start gap-4 cursor-default overflow-hidden"
                       >
-                        <div>
-                          <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{stat.label}</p>
-                          <h3 className="text-3xl font-extrabold mt-1 text-zinc-900 dark:text-zinc-50">{stat.value}</h3>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider truncate">{stat.label}</p>
+                          <h3 className="text-3xl font-extrabold mt-1 text-zinc-900 dark:text-zinc-50 truncate">{stat.value}</h3>
                         </div>
-                        <div className={`p-2.5 rounded-xl ${stat.color}`}>
+                        <div className={`p-2.5 rounded-xl flex-shrink-0 ${stat.color}`}>
                           <StatIcon className="h-5 w-5" />
                         </div>
                       </motion.div>
@@ -4587,7 +4587,7 @@ export const Dashboard = () => {
                             key={food._id}
                             className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl p-4 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
                           >
-                            <div className="flex gap-4 items-center">
+                            <div className="flex flex-1 min-w-0 gap-4 items-center">
                               {food.image && (
                                 <img 
                                   src={food.image} 
@@ -4595,8 +4595,8 @@ export const Dashboard = () => {
                                   className="h-12 w-12 rounded-xl object-cover border border-zinc-200 dark:border-zinc-800"
                                 />
                               )}
-                              <div>
-                                <h4 className="font-bold text-zinc-900 dark:text-zinc-50 leading-snug">{food.title}</h4>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-zinc-900 dark:text-zinc-50 leading-snug truncate">{food.title}</h4>
                                 <div className="flex flex-wrap gap-2 items-center mt-1">
                                   <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{food.category}</span>
                                   <span className="text-[11px] text-zinc-300 dark:text-zinc-700">•</span>
