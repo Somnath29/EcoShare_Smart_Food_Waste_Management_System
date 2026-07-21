@@ -289,7 +289,7 @@ export const reserveFood = async (
         food.quantity -= requestedQuantity;
         await food.save();
         
-        const cloneData = food.toObject();
+        const cloneData: any = food.toObject();
         delete cloneData._id;
         delete cloneData.createdAt;
         delete cloneData.updatedAt;
