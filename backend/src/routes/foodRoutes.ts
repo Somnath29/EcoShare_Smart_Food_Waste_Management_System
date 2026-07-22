@@ -21,7 +21,7 @@ const router = Router();
 router.post(
   '/',
   protect,
-  restrictTo('Kitchen Staff', 'Admin'),
+  restrictTo('Kitchen Staff', 'Admin', 'Volunteer'),
   validateCreateFood,
   createFood
 );
@@ -33,7 +33,7 @@ router.get('/:id', protect, getFoodById);
 router.put(
   '/:id',
   protect,
-  restrictTo('Kitchen Staff', 'Admin'),
+  restrictTo('Kitchen Staff', 'Admin', 'Volunteer'),
   validateUpdateFood,
   updateFood
 );
@@ -41,7 +41,7 @@ router.put(
 router.delete(
   '/:id',
   protect,
-  restrictTo('Kitchen Staff', 'Admin'),
+  restrictTo('Kitchen Staff', 'Admin', 'Volunteer'),
   deleteFood
 );
 

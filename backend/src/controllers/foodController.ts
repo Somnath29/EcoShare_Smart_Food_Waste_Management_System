@@ -31,6 +31,9 @@ export const createFood = async (
       isForDonation,
     } = req.body;
 
+    // Volunteers can only donate food (mostly to NGOs)
+    const finalIsForDonation = req.user.role === 'Volunteer' ? true : (isForDonation || false);
+
     const food = await Food.create({
       title,
       description,
@@ -43,7 +46,7 @@ export const createFood = async (
       longitude,
       image,
       status: status || 'Available',
-      isForDonation: isForDonation || false,
+      isForDonation: finalIsForDonation,
       createdBy: req.user._id,
     });
 

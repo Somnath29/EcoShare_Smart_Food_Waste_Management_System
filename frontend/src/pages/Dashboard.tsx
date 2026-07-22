@@ -2425,7 +2425,7 @@ export const Dashboard = () => {
         latitude: mockLatitude,
         longitude: mockLongitude,
         image: finalImage,
-        isForDonation,
+        isForDonation: user?.role === 'Volunteer' ? true : isForDonation,
       };
 
       let res;
@@ -5229,16 +5229,21 @@ export const Dashboard = () => {
 
                     {/* For Donation Checkbox */}
                     <div className="sm:col-span-2">
-                      <label className="flex items-center gap-3 p-4 border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-xl cursor-pointer hover:bg-emerald-500/10 transition-colors">
+                      <label className={`flex items-center gap-3 p-4 border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-xl ${user?.role === 'Volunteer' ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:bg-emerald-500/10'} transition-colors`}>
                         <input
                           type="checkbox"
-                          checked={isForDonation}
+                          checked={user?.role === 'Volunteer' ? true : isForDonation}
                           onChange={e => setIsForDonation(e.target.checked)}
-                          className="h-5 w-5 text-emerald-500 rounded border-emerald-500/30 focus:ring-emerald-500/50"
+                          disabled={user?.role === 'Volunteer'}
+                          className="h-5 w-5 text-emerald-500 rounded border-emerald-500/30 focus:ring-emerald-500/50 disabled:opacity-50"
                         />
                         <div>
                           <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Put food for donation to NGOs</p>
-                          <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">Enable this to make this food exclusively available for NGOs immediately.</p>
+                          <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">
+                            {user?.role === 'Volunteer'
+                              ? "Volunteers can only log food for NGO donations."
+                              : "Enable this to make this food exclusively available for NGOs immediately."}
+                          </p>
                         </div>
                       </label>
                     </div>
